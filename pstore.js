@@ -16,10 +16,10 @@ const productosPorPagina = 20;
 // ==========================================
 // REGISTRO DE EVENTOS Y MÉTRICAS
 // ==========================================
-const URL_APPS_SCRIPT_EVENTOS = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec";
+const URL_APPS_SCRIPT_EVENTOS = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec"; 
 
 function registrarEvento(nombreEvento, detalle = "", extra = "") {
-  if (!URL_APPS_SCRIPT_EVENTOS || URL_APPS_SCRIPT_EVENTOS === "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec") return;
+  if (!URL_APPS_SCRIPT_EVENTOS || URL_APPS_SCRIPT_EVENTOS === "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/execAQUI_TU_URL_DE_APPS_SCRIPT") return;
 
   const payload = {
     evento: nombreEvento,
@@ -27,7 +27,6 @@ function registrarEvento(nombreEvento, detalle = "", extra = "") {
     extra: extra
   };
 
-  // Se envía mediante keepalive para asegurar el envío en segundo plano
   fetch(URL_APPS_SCRIPT_EVENTOS, {
     method: "POST",
     mode: "no-cors",
