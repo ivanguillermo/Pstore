@@ -486,7 +486,7 @@ function renderizarTarjetas(productos) {
     contenedor.innerHTML = "<p style='grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 2rem;'>No se encontraron productos.</p>";
     return;
   }
-
+  
   productos.forEach((prod) => {
     const esFav = wishlistIDs.includes(prod.id);
     const tarjeta = document.createElement("article");
@@ -524,20 +524,25 @@ function renderizarTarjetas(productos) {
 
     const srcImagen = obtenerUrlDirectaDrive(prod.imagen);
 
-    tarjeta.innerHTML = `
-      ${badgeHtml}
-      <button class="btn-fav ${esFav ? 'activo' : ''}" onclick="event.stopPropagation(); toggleFavorito('${prod.id}')">
-        ${esFav ? '❤️' : '🤍'}
-      </button>
-      <img src="${srcImagen}" alt="${prod.nombre}" loading="lazy">
-      <div class="contenido">
-        <span class="categoria">${prod.categoria || ''}</span>
-        <h2 class="nombre">${prod.nombre || ''}</h2>
-        <p class="descripcion">${prod.descripcion || ''}</p>
-        <div class="precios">${htmlPrecio}</div>
-      </div>
-    `;
+    productos.forEach((prod, index) => {
+  // Las primeras 2 tarjetas cargan de inmediato para optimizar el LCP; el resto usa lazy loading
+  const esPrimeraImagen = index < 2;
+  const loadingAttr = esPrimeraImagen ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
 
+  tarjeta.innerHTML = `
+        ${badgeHtml}
+        <button class="btn-fav ${esFav ? 'activo' : ''}" onclick="event.stopPropagation(); toggleFavorito('${prod.id}')">
+          ${esFav ? '❤️' : '🤍'}
+        </button>
+        <img src="${srcImagen}" alt="${prod.nombre}" ${loadingAttr}>
+        <div class="contenido">
+          <span class="categoria">${prod.categoria || ''}</span>
+          <h2 class="nombre">${prod.nombre || ''}</h2>
+          <p class="descripcion">${prod.descripcion || ''}</p>
+          <div class="precios">${htmlPrecio}</div>
+        </div>
+      `;
+    });
     tarjeta.addEventListener("click", () => abrirModal(prod));
     contenedor.appendChild(tarjeta);
   });
