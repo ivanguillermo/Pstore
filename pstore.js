@@ -13,6 +13,30 @@ let mostrandoBolivares = false;
 let paginaActual = 1;
 const productosPorPagina = 20;
 
+// ==========================================
+// REGISTRO DE EVENTOS Y MÉTRICAS
+// ==========================================
+const URL_APPS_SCRIPT_EVENTOS = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec";
+
+function registrarEvento(nombreEvento, detalle = "", extra = "") {
+  if (!URL_APPS_SCRIPT_EVENTOS || URL_APPS_SCRIPT_EVENTOS === "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec") return;
+
+  const payload = {
+    evento: nombreEvento,
+    detalle: detalle,
+    extra: extra
+  };
+
+  // Se envía mediante keepalive para asegurar el envío en segundo plano
+  fetch(URL_APPS_SCRIPT_EVENTOS, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    keepalive: true
+  }).catch(err => console.warn("No se pudo registrar el evento:", err));
+}
+
 // 1. Algoritmo para mezclar elementos de forma aleatoria (Fisher-Yates)
 function mezclarArreglo(arreglo) {
   const copia = [...arreglo];
@@ -838,14 +862,27 @@ let mostrandoSoloFavoritos = false;
 
 function toggleFavorito(id) {
   const index = wishlistIDs.indexOf(id);
+  let accion = "";
+
   if (index === -1) {
     wishlistIDs.push(id);
+    accion = "agregado";
   } else {
     wishlistIDs.splice(index, 1);
+    accion = "removido";
   }
+
   localStorage.setItem("pstore_wishlist", JSON.stringify(wishlistIDs));
   actualizarContadorWishlist();
-  aplicarFiltrosYPaginacion(); // Llamada a la función real de tu catálogo
+  aplicarFiltrosYPaginacion();
+
+  // 🟢 REGISTRO DEL EVENTO EN EL DASHBOARD
+  if (accion === "agregado") {
+    // Busca el nombre del producto para registrarlo claro en el Sheet
+    const prod = listaProductosCompleta.find(p => p.id === id);
+    const nombreProd = prod ? prod.nombre : id;
+    registrarEvento("producto_favorito", id, nombreProd);
+  }
 }
 
 function actualizarContadorWishlist() {
