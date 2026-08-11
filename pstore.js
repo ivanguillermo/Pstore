@@ -887,7 +887,18 @@ function alternarMoneda() {
 function obtenerUrlDirectaDrive(url) {
   if (!url) return 'assets/pstore.jpg';
   const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-  return match && match[1] ? `https://lh3.googleusercontent.com/d/${match[1]}` : url;
+  
+  if (match && match[1]) {
+    // Genera el enlace directo agregando compresión WebP y ancho de 400px
+    return `https://lh3.googleusercontent.com/d/${match[1]}=w400-rw`;
+  }
+  
+  // Si la URL ya viene en formato googleusercontent.com, nos aseguramos de aplicarle el parámetro
+  if (url.includes('googleusercontent.com')) {
+    return url.replace(/=(s|w)\d+.*$/, '') + '=w400-rw';
+  }
+  
+  return url;
 }
 
 function poblarCategorias(productos) {
