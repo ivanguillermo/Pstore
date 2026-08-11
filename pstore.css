@@ -1278,3 +1278,18 @@ footer {
     color: #000000 !important;
   }
 }
+/* Contenedor de la imagen con relación de aspecto fija */
+.img-container {
+  width: 100%;
+  aspect-ratio: 1 / 1; /* Mantiene proporción cuadrada fija */
+  background-color: #f1f5f9; /* Color de fondo mientras descarga */
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.img-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
