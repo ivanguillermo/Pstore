@@ -122,8 +122,7 @@
       </table>
     </div>
   </div>
-
-  <script>
+    <script>
     // === CONFIGURACIÓN ===
     const ADMIN_EMAIL = "ivanglopezp@gmail.com";
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec";
@@ -151,7 +150,8 @@
       const errDiv = document.getElementById("loginError");
 
       try {
-        const res = await fetch(SCRIPT_URL);
+        // Se agrega ?t=... para saltar la caché del navegador y leer la hoja en vivo
+        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
         const data = await res.json();
         
         const listaPermitida = (data.usuarios || []).map(u => String(u).toLowerCase());
@@ -193,7 +193,8 @@
 
     async function cargarVentas() {
       try {
-        const res = await fetch(SCRIPT_URL);
+        // Se agrega ?t=... para saltar la caché del navegador
+        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
         const data = await res.json();
         const listaVentas = data.ventas || (Array.isArray(data) ? data : []);
         renderizarVentas(listaVentas);
@@ -244,3 +245,5 @@
   </script>
 </body>
 </html>
+
+    

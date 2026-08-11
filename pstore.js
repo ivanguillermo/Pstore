@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    if (btnInstalarPWA) btnInstalarPWA.style.display = "block";
+    if (btnInstalarPWA) btnInstalarPWA.style.display = "none";
   });
 
   if (btnInstalarPWA) {
@@ -210,32 +210,36 @@ document.addEventListener("DOMContentLoaded", () => {
     if (input) identificarCliente(input);
   });
   // 1. Cargar Productos desde Google Sheets
-  Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=51076819&single=true&output=csv", {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: h => h.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "_"),
-    complete: function (results) {
-      listaProductosCompleta = results.data
-        .map(p => ({
-          ...p,
-          id: p.id ? p.id.trim() : "",
-          categoria_secundaria: p.categoria_secundaria || p.personaje || p.coleccion || ""
-        }))
-        .filter((p) => p.nombre && p.categoria && p.precio);
+  // 1. Cargar Productos desde Google Sheets
+Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=51076819&single=true&output=csv", {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  transformHeader: h => h.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "_"),
+  complete: function (results) {
+    const productosBase = results.data
+      .map(p => ({
+        ...p,
+        id: p.id ? p.id.trim() : "",
+        categoria_secundaria: p.categoria_secundaria || p.personaje || p.coleccion || ""
+      }))
+      .filter((p) => p.nombre && p.categoria && p.precio);
 
-      poblarCategorias(listaProductosCompleta);
-      construirFiltrosDinamicos();
-      aplicarFiltrosYPaginacion();
-      configurarEventosBuscador();
-      configurarEventosModal();
-      configurarEventosCarrito();
-      verificarURLCompartida(listaProductosCompleta);
-    }
-  });
+    // FIX: Guardamos el catálogo YA ORDENADO (4 nuevos al inicio + resto aleatorio)
+    listaProductosCompleta = ordenarProductosParaCatalogo(productosBase);
+
+    poblarCategorias(listaProductosCompleta);
+    construirFiltrosDinamicos();
+    aplicarFiltrosYPaginacion();
+    configurarEventosBuscador();
+    configurarEventosModal();
+    configurarEventosCarrito();
+    verificarURLCompartida(listaProductosCompleta);
+  }
+});
 
   // 2. Cargar Clientes VIP
-  Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=1777061918&single=true&output=csv", {
+  Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=277594200&single=true&output=csv", {
     download: true,
     header: true,
     skipEmptyLines: true,
@@ -246,78 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 // --- MÓDULO DE PAGINACIÓN Y FILTRADO ---
 
-function obtenerProductosFiltrados() {
-  const busqueda = (document.getElementById("input-busqueda")?.value || "").toLowerCase().trim();
-  const categoria = document.getElementById("select-categoria")?.value || "todas";
-  const orden = document.getElementById("select-orden")?.value || "defecto";
 
-  return productosGlobal.filter((prod) => {
-    const coincideNombre = (prod.nombre || "").toLowerCase().includes(busqueda);
-    const coincideDesc = (prod.descripcion || "").toLowerCase().includes(busqueda);
-    const coincideCat = categoria === "todas" || (prod.categoria || "").toLowerCase() === categoria.toLowerCase();
-    
-    return (coincideNombre || coincideDesc) && coincideCat;
-  }).sort((a, b) => {
-    const precioA = parseFloat(a.precio) || 0;
-    const precioB = parseFloat(b.precio) || 0;
-    if (orden === "precio-asc") return precioA - precioB;
-    if (orden === "precio-desc") return precioB - precioA;
-    if (orden === "nombre-asc") return (a.nombre || "").localeCompare(b.nombre || "");
-    return 0;
-  });
-}
-
-function renderizarPaginacion(totalItems) {
-  const contenedorPaginacion = document.getElementById("paginacion");
-  if (!contenedorPaginacion) return;
-
-  contenedorPaginacion.innerHTML = "";
-  const totalPaginas = Math.ceil(totalItems / productosPorPagina);
-  if (totalPaginas <= 1) return;
-
-  const btnAnt = document.createElement("button");
-  btnAnt.textContent = "« Ant";
-  btnAnt.disabled = paginaActual === 1;
-  btnAnt.addEventListener("click", () => {
-    if (paginaActual > 1) {
-      paginaActual--;
-      actualizarCatalogoConPaginacion();
-    }
-  });
-  contenedorPaginacion.appendChild(btnAnt);
-
-  for (let i = 1; i <= totalPaginas; i++) {
-    const btnPagina = document.createElement("button");
-    btnPagina.textContent = i;
-    if (i === paginaActual) btnPagina.classList.add("activa");
-    btnPagina.addEventListener("click", () => {
-      paginaActual = i;
-      actualizarCatalogoConPaginacion();
-    });
-    contenedorPaginacion.appendChild(btnPagina);
-  }
-
-  const btnSig = document.createElement("button");
-  btnSig.textContent = "Sig »";
-  btnSig.disabled = paginaActual === totalPaginas;
-  btnSig.addEventListener("click", () => {
-    if (paginaActual < totalPaginas) {
-      paginaActual++;
-      actualizarCatalogoConPaginacion();
-    }
-  });
-  contenedorPaginacion.appendChild(btnSig);
-}
-
-function actualizarCatalogoConPaginacion() {
-  const filtrados = obtenerProductosFiltrados();
-  const inicio = (paginaActual - 1) * productosPorPagina;
-  const fin = inicio + productosPorPagina;
-  const paginados = filtrados.slice(inicio, fin);
-
-  renderizarTarjetas(paginados);
-  renderizarPaginacion(filtrados.length);
-}
   // Eventos de interfaz
   actualizarContadorWishlist();
   actualizarContadorCarrito();
@@ -350,7 +283,7 @@ function obtenerValoresUnicos(lista, propiedad) {
   lista.forEach(p => {
     const val = p[propiedad];
     if (!val) return;
-    if (propiedad === "tallas") {
+    if (propiedad === "talla") {
       val.split(",").forEach(t => valoresSet.add(t.trim().toUpperCase()));
     } else {
       valoresSet.add(val.trim());
@@ -364,7 +297,7 @@ function construirFiltrosDinamicos() {
     { idContenedor: "grupo-categoria", claveCSV: "categoria" },
     { idContenedor: "grupo-categoria_secundaria", claveCSV: "categoria_secundaria" },
     { idContenedor: "grupo-coleccion", claveCSV: "coleccion" },
-    { idContenedor: "grupo-tallas", claveCSV: "tallas" },
+    { idContenedor: "grupo-talla", claveCSV: "talla" },
     { idContenedor: "grupo-estado", claveCSV: "estado" }
   ];
 
@@ -377,7 +310,7 @@ function construirFiltrosDinamicos() {
 
     valoresUnicos.forEach(valor => {
       const label = document.createElement("label");
-      if (claveCSV === "tallas") {
+      if (claveCSV === "talla") {
         label.className = "tag-check";
         label.innerHTML = `<input type="checkbox" class="filter-check" data-grupo="${claveCSV}" value="${valor}" /> ${valor}`;
       } else {
@@ -397,7 +330,7 @@ function construirFiltrosDinamicos() {
 
 function obtenerFiltrosSeleccionados() {
   const checkboxes = document.querySelectorAll(".filter-check:checked");
-  const filtros = { categoria: [], categoria_secundaria: [], coleccion: [], tallas: [], estado: [] };
+  const filtros = { categoria: [], categoria_secundaria: [], coleccion: [], talla: [], estado: [] };
 
   checkboxes.forEach(cb => {
     const grupo = cb.dataset.grupo;
@@ -449,11 +382,8 @@ function normalizarProductos(filas) {
 function filtrarProductos() {
   const { filtros, textoBusqueda, precioMin, precioMax } = obtenerFiltrosSeleccionados();
 
-  return listaProductosCompleta.filter(prod => {
-    // Si la opción "Ver Favoritos" está activa, solo deja pasar los IDs guardados
-    if (mostrandoSoloFavoritos && !wishlistIDs.includes(prod.id)) {
-      return false;
-    }
+  let resultados = listaProductosCompleta.filter(prod => {
+    if (mostrandoSoloFavoritos && !wishlistIDs.includes(prod.id)) return false;
 
     if (textoBusqueda) {
       const enNombre = prod.nombre?.toLowerCase().includes(textoBusqueda);
@@ -469,15 +399,29 @@ function filtrarProductos() {
     if (filtros.categoria_secundaria.length > 0 && !filtros.categoria_secundaria.includes(prod.categoria_secundaria?.toLowerCase())) return false;
     if (filtros.coleccion.length > 0 && !filtros.coleccion.includes(prod.coleccion?.toLowerCase())) return false;
 
-    if (filtros.tallas.length > 0) {
-      const tallasProd = (prod.tallas || "").toLowerCase().split(",").map(t => t.trim());
-      if (!filtros.tallas.some(t => tallasProd.includes(t))) return false;
+    if (filtros.talla.length > 0) {
+      const tallaProd = (prod.talla || "").toLowerCase().split(",").map(t => t.trim());
+      if (!filtros.talla.some(t => tallaProd.includes(t))) return false;
     }
 
     if (filtros.estado.length > 0 && !filtros.estado.includes(prod.estado?.toLowerCase())) return false;
 
     return true;
   });
+
+  // Opcional: Si tienes un select-orden y el usuario elige precio/nombre, reordenar
+  const selectOrden = document.getElementById("select-orden")?.value;
+  if (selectOrden === "precio-asc") {
+    resultados.sort((a, b) => (parseFloat(a.precio) || 0) - (parseFloat(b.precio) || 0));
+  } else if (selectOrden === "precio-desc") {
+    resultados.sort((a, b) => (parseFloat(b.precio) || 0) - (parseFloat(a.precio) || 0));
+  } else if (selectOrden === "nombre-asc") {
+    resultados.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+  }
+
+  // Si no hay orden seleccionado en el select, retornará `resultados` respetando 
+  // el orden inicial (4 nuevos + aleatorio).
+  return resultados;
 }
 
 function aplicarFiltrosYPaginacion() {
@@ -721,10 +665,6 @@ function actualizarEnlacesCompartir(producto) {
 // ==========================================
 // CARRITO Y WISHLIST
 // ==========================================
-
-
-
-
 
 function agregarAlCarrito(prod) {
   const existe = carrito.find((p) => p.nombre === prod.nombre);
