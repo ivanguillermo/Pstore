@@ -850,6 +850,10 @@ function enviarPedidoWhatsApp() {
   mensaje += `📍 *Ubicación:* ${ciudad}\n`;
   mensaje += `💳 *Método de Pago:* ${pago}`;
 
+  // 🟢 REGISTRO DEL EVENTO EN EL DASHBOARD
+  const resumenPedido = `${totalUnidades} productos | Total: $${totalFinal.toFixed(2)} | Cliente: ${nombre}`;
+  registrarEvento("pedido_whatsapp", "carrito_checkout", resumenPedido);
+
   const telefono = CONFIG_PSTORE.numeroWhatsapp || "584126216661";
   window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank");
 }
