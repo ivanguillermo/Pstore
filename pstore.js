@@ -728,9 +728,15 @@ function actualizarEnlacesCompartir(producto) {
 
   if (btnWa) {
     btnWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoMensaje + "\n" + urlProducto)}`;
+    btnWa.onclick = () => {
+      registrarEvento("producto_compartido", String(producto.id), `${producto.nombre} | Vía: WhatsApp`);
+    };
   }
   if (btnFb) {
     btnFb.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlProducto)}`;
+    btnFb.onclick = () => {
+      registrarEvento("producto_compartido", String(producto.id), `${producto.nombre} | Vía: Facebook`);
+    };
   }
 }
 
@@ -982,6 +988,7 @@ function verificarURLCompartida(productos) {
 function compartirNativo() {
   if (!productoActualModal) return;
   const urlProducto = `${window.location.origin}${window.location.pathname}#${productoActualModal.id}`;
+  registrarEvento("producto_compartido", String(productoActualModal.id), `${productoActualModal.nombre} | Vía: Menu Nativo`);
   if (navigator.share) {
     navigator.share({
       title: productoActualModal.nombre,
@@ -996,6 +1003,7 @@ function compartirNativo() {
 function copiarEnlaceProducto() {
   if (!productoActualModal) return;
   const urlProducto = `${window.location.origin}${window.location.pathname}#${productoActualModal.id}`;
+  registrarEvento("producto_compartido", String(productoActualModal.id), `${productoActualModal.nombre} | Vía: Copiar Link`);
   navigator.clipboard.writeText(urlProducto).then(() => alert("¡Enlace copiado al portapapeles!"));
 }
 function identificarCliente(correoOCodigo) {
