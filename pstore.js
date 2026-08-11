@@ -875,9 +875,8 @@ function toggleFavorito(id) {
   actualizarContadorWishlist();
   aplicarFiltrosYPaginacion();
 
-  // 🟢 REGISTRO DEL EVENTO EN EL DASHBOARD
+  // 🟢 Registrar solo cuando se agrega a Favoritos
   if (accion === "agregado") {
-    // Busca el nombre del producto para registrarlo claro en el Sheet
     const prod = listaProductosCompleta.find(p => p.id === id);
     const nombreProd = prod ? prod.nombre : id;
     registrarEvento("producto_favorito", id, nombreProd);
