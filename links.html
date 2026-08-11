@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PStore - Hub de Accesos Rápidos</title>
+  <link rel="icon" type="image/png" href="assets/pstore.png">
+  <style>
+    :root {
+      --bg-color: #0f111a;
+      --card-bg: #1a1d2e;
+      --card-hover: #23273e;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-edit: #f59e0b;
+      --accent-view: #10b981;
+      --accent-google: #4285f4;
+      --border-color: #2e344e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      max-width: 1200px;
+      margin: 0 auto 2rem auto;
+      text-align: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    .brand img {
+      width: 45px;
+      height: 45px;
+      border-radius: 8px;
+    }
+
+    .brand h1 {
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #a78bfa, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .search-container {
+      max-width: 500px;
+      margin: 1.5rem auto 0 auto;
+      position: relative;
+    }
+
+    .search-container input {
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background-color: var(--card-bg);
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .search-container input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    .category-title {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .link-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-decoration: none;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .link-card:hover {
+      background-color: var(--card-hover);
+      transform: translateY(-3px);
+      border-color: var(--primary);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(124, 58, 237, 0.15);
+      color: #a78bfa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .card-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-tag {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Modificadores por tipo de acción */
+    .link-card.edit .icon-box {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-edit);
+    }
+
+    .link-card.load .icon-box {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-view);
+    }
+
+    .link-card.google .icon-box {
+      background: rgba(66, 133, 244, 0.15);
+      color: var(--accent-google);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 4rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Ocultar tarjetas que no coincidan con la búsqueda */
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <img src="assets/pstore.png" alt="PStore" onerror="this.style.display='none'">
+      <h1>PStore Hub</h1>
+    </div>
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Buscar acceso directo... (ej. clientes, ventas, merchant)" onkeyup="filtrarEnlaces()">
+    </div>
+  </header>
+
+  <main>
+
+    <!-- SECCIÓN 1: PRINCIPALES & SITIO -->
+    <section class="link-group">
+      <h2 class="category-title">🌐 Principal & Base de Datos</h2>
+      <div class="grid">
+        
+        <a href="https://pstore.com.ve" target="_blank" class="link-card">
+          <div class="icon-box">🛍️</div>
+          <div class="card-info">
+            <span class="card-title">Página Web</span>
+            <span class="card-tag">pstore.com.ve</span>
+          </div>
+        </a>
+
+        <a href="https://docs.google.com/spreadsheets/d/1Oy7oviUDfuKbSWfTWEO2qLLcRkblcxp8n0uVoQOEPE0/edit?usp=sharing" target="_blank" class="link-card">
+          <div class="icon-box">📊</div>
+          <div class="card-info">
+            <span class="card-title">Pstore Master</span>
+            <span class="card-tag">Google Sheets Principal</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: CARGA DE DATOS (FORMULARIOS RESPUESTA) -->
+    <section class="link-group">
+      <h2 class="category-title">📥 Formularios de Carga</h2>
+      <div class="grid">
+
+        <a href="https://forms.gle/qDS8vfbcsd91ERAs5" target="_blank" class="link-card load">
+          <div class="icon-box">📦</div>
+          <div class="card-info">
+            <span class="card-title">Cargar Artículos</span>
+            <span class="card-tag">Formulario de registro</span>
+          </div>
+        </a>
+
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSc2mAnET4Qi3EbHRLFr1U32-f0-y5-ZE7R09BPXT_EVN79C2Q/viewform?usp=publish-editor" target="_blank" class="link-card load">
+          <div class="icon-box">👤</div>
+          <div class="card-info">
+            <span class="card-title">Cargar Clientes</span>
+            <span class="card-tag">Formulario de registro</span>
+          </div>
+        </a>
+
+        <a href="https://docs.google.com/forms/d/1WIcMBXxWc2bWsIP05rTNUvOGQ4TWsbBh2VovqD-raD0/edit" target="_blank" class="link-card load">
+          <div class="icon-box">💰</div>
+          <div class="card-info">
+            <span class="card-title">Cargar Ventas</span>
+            <span class="card-tag">Formulario de registro</span>
+          </div>
+        </a>
+
+        <a href="https://forms.gle/CU3Hy4etnTAte1fN6" target="_blank" class="link-card load">
+          <div class="icon-box">💳</div>
+          <div class="card-info">
+            <span class="card-title">Cargar Pagos</span>
+            <span class="card-tag">Formulario de registro</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- SECCIÓN 3: EDICIÓN DE FORMULARIOS -->
+    <section class="link-group">
+      <h2 class="category-title">✏️ Edición de Formularios (Admin)</h2>
+      <div class="grid">
+
+        <a href="https://docs.google.com/forms/d/1-9ZztYV-1vZR9as7TiOVOMaGW8U9nzHgDyauMsRuRXo/edit" target="_blank" class="link-card edit">
+          <div class="icon-box">✏️</div>
+          <div class="card-info">
+            <span class="card-title">Edit Cargar Artículos</span>
+            <span class="card-tag">Estructura Google Forms</span>
+          </div>
+        </a>
+
+        <a href="https://docs.google.com/forms/d/1fBJq_mkz_J2ggGT6OqvBnKS9DCDmCMK5PhkTPX6NEgE/edit" target="_blank" class="link-card edit">
+          <div class="icon-box">✏️</div>
+          <div class="card-info">
+            <span class="card-title">Edit Cargar Clientes</span>
+            <span class="card-tag">Estructura Google Forms</span>
+          </div>
+        </a>
+
+        <a href="https://forms.gle/PMhcsmj7qzrYe4rUA" target="_blank" class="link-card edit">
+          <div class="icon-box">✏️</div>
+          <div class="card-info">
+            <span class="card-title">Edit Cargar Ventas</span>
+            <span class="card-tag">Estructura Google Forms</span>
+          </div>
+        </a>
+
+        <a href="https://docs.google.com/forms/d/16pW1PPQlOW4q5l2nht_x6KTDP5MswQmHVWyW7EzNACg/edit" target="_blank" class="link-card edit">
+          <div class="icon-box">✏️</div>
+          <div class="card-info">
+            <span class="card-title">Edit Cargar Pagos/Abonos</span>
+            <span class="card-tag">Estructura Google Forms</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- SECCIÓN 4: PLATA FORMAS & HERRAMIENTAS GOOGLE -->
+    <section class="link-group">
+      <h2 class="category-title">📈 Google, Analítica & Merchant</h2>
+      <div class="grid">
+
+        <a href="https://merchants.google.com/mc/items?a=5836408351&timePeriod=2026-07-11%2C2026-08-07&marketingMethod=4&src=ome" target="_blank" class="link-card google">
+          <div class="icon-box">🏷️</div>
+          <div class="card-info">
+            <span class="card-title">Google Merchant</span>
+            <span class="card-tag">Gestión de Productos</span>
+          </div>
+        </a>
+
+        <a href="https://docs.google.com/spreadsheets/d/1KdBY3QBP8BFeV7BCD0Uc82E3tbNEMuCzfDuKtANWMcE/edit?gid=988042870#gid=988042870" target="_blank" class="link-card google">
+          <div class="icon-box">📊</div>
+          <div class="card-info">
+            <span class="card-title">Merchant Sheet</span>
+            <span class="card-tag">Feed de datos de productos</span>
+          </div>
+        </a>
+
+        <a href="https://search.google.com/search-console?resource_id=https%3A%2F%2Fivanguillermo.github.io%2Fpstore%2Fcargar art" target="_blank" class="link-card google">
+          <div class="icon-box">🔍</div>
+          <div class="card-info">
+            <span class="card-title">Search Console / Analytics</span>
+            <span class="card-tag">Indexación & Tráfico</span>
+          </div>
+        </a>
+
+        <a href="https://console.firebase.google.com/u/0/project/pstorechat/messaging" target="_blank" class="link-card google">
+          <div class="icon-box">🔔</div>
+          <div class="card-info">
+            <span class="card-title">Notificaciones Push</span>
+            <span class="card-tag">Firebase Cloud Messaging</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- SECCIÓN 5: COMUNICACIÓN & DISEÑO -->
+    <section class="link-group">
+      <h2 class="category-title">🎨 Chat, Soporte & Utilidades</h2>
+      <div class="grid">
+
+        <a href="https://app.crisp.chat/" target="_blank" class="link-card">
+          <div class="icon-box">💬</div>
+          <div class="card-info">
+            <span class="card-title">Crisp Chat</span>
+            <span class="card-tag">Atención al Cliente</span>
+          </div>
+        </a>
+
+        <a href="https://docs.google.com/presentation/d/16DMQbu5Sk52aHNVObXTO69CBbKQTGelnqEpf5GxGhXQ/edit?usp=drive_web&ouid=113251891533513230387" target="_blank" class="link-card">
+          <div class="icon-box">🎨</div>
+          <div class="card-info">
+            <span class="card-title">Diseño Catálogos</span>
+            <span class="card-tag">Google Slides</span>
+          </div>
+        </a>
+
+        <a href="https://script.google.com/home/projects/1m6alOUSeaJiKgJBY1kY_JezX0SvqswKEhO6C5h1Rvkw6KKsHL3Y_VWkM/edit" target="_blank" class="link-card">
+          <div class="icon-box">⚙️</div>
+          <div class="card-info">
+            <span class="card-title">Slide to PDF Script</span>
+            <span class="card-tag">Google Apps Script</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>PStore - Panel Interno de Accesos Rápidos</p>
+  </footer>
+
+  <script>
+    function filtrarEnlaces() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.link-card');
+      const groups = document.querySelectorAll('.link-group');
+
+      cards.forEach(card => {
+        const title = card.querySelector('.card-title').textContent.toLowerCase();
+        const tag = card.querySelector('.card-tag').textContent.toLowerCase();
+        
+        if (title.includes(query) || tag.includes(query)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      // Ocultar grupo entero si no tiene tarjetas visibles
+      groups.forEach(group => {
+        const visibleCards = group.querySelectorAll('.link-card:not(.hidden)');
+        if (visibleCards.length === 0 && query !== '') {
+          group.classList.add('hidden');
+        } else {
+          group.classList.remove('hidden');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
