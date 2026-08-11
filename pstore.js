@@ -209,15 +209,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("input-codigo-cliente")?.value;
     if (input) identificarCliente(input);
   });
+
   // 1. Cargar Productos desde Google Sheets
-  // 1. Cargar Productos desde Google Sheets
-Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=51076819&single=true&output=csv", {
-  download: true,
-  header: true,
-  skipEmptyLines: true,
-  transformHeader: h => h.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "_"),
-  complete: function (results) {
-    const productosBase = results.data
+// ==========================================
+  // CARGA HÍBRIDA DE PRODUCTOS (CSV Local + Sincronización Google Sheets)
+  // ==========================================
+  const URL_CSV_LOCAL = "productos.csv"; // Archivo alojado en tu repositorio/servidor
+  const URL_GOOGLE_SHEETS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=51076819&single=true&output=csv";
+
+  // Función genérica de procesamiento e inicialización
+  function procesarEInicializarProductos(dataCSV, esActualizacionSilenciosa = false) {
+    const productosBase = dataCSV
       .map(p => ({
         ...p,
         id: p.id ? p.id.trim() : "",
@@ -225,19 +227,64 @@ Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2
       }))
       .filter((p) => p.nombre && p.categoria && p.precio);
 
-    // FIX: Guardamos el catálogo YA ORDENADO (4 nuevos al inicio + resto aleatorio)
+    if (productosBase.length === 0) return;
+
+    // Guardamos el catálogo ordenado (4 nuevos al inicio + resto aleatorio)
     listaProductosCompleta = ordenarProductosParaCatalogo(productosBase);
 
+    // Si es la carga inicial en renderizado primario
     poblarCategorias(listaProductosCompleta);
     construirFiltrosDinamicos();
     aplicarFiltrosYPaginacion();
-    configurarEventosBuscador();
-    configurarEventosModal();
-    configurarEventosCarrito();
-    verificarURLCompartida(listaProductosCompleta);
-  }
-});
 
+    if (!esActualizacionSilenciosa) {
+      configurarEventosBuscador();
+      configurarEventosModal();
+      configurarEventosCarrito();
+      verificarURLCompartida(listaProductosCompleta);
+    }
+  }
+
+  // PASO 1: Carga Ultrarrápida del CSV Local
+  Papa.parse(URL_CSV_LOCAL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: h => h.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "_"),
+    complete: function (results) {
+      // Pintar productos inmediatamente desde el CSV local
+      procesarEInicializarProductos(results.data, false);
+
+      // PASO 2: Sincronización en segundo plano con Google Sheets
+      setTimeout(() => {
+        Papa.parse(URL_GOOGLE_SHEETS, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: h => h.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "_"),
+          complete: function (freshResults) {
+            console.log("🔄 Catálogo actualizado en segundo plano desde Google Sheets.");
+            procesarEInicializarProductos(freshResults.data, true);
+          },
+          error: function (err) {
+            console.warn("No se pudo sincronizar en vivo con Google Sheets, conservando datos del CSV local.");
+          }
+        });
+      }, 2000); // Espera 2 segundos antes de consultar a Google Sheets para no saturar la carga inicial
+    },
+    error: function () {
+      // Fallback: Si el CSV local no existe aún en el servidor, cargar directo de Google Sheets
+      Papa.parse(URL_GOOGLE_SHEETS, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => h.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "_"),
+        complete: function (results) {
+          procesarEInicializarProductos(results.data, false);
+        }
+      });
+    }
+  });
   // 2. Cargar Clientes VIP
   Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=277594200&single=true&output=csv", {
     download: true,
@@ -249,8 +296,6 @@ Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2
     }
   });
 // --- MÓDULO DE PAGINACIÓN Y FILTRADO ---
-
-
   // Eventos de interfaz
   actualizarContadorWishlist();
   actualizarContadorCarrito();
