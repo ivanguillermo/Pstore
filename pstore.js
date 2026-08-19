@@ -424,12 +424,6 @@ function obtenerFiltrosSeleccionados() {
   const textoBusqueda = document.getElementById("input-busqueda")?.value.toLowerCase().trim() || "";
   const precioMin = parseFloat(document.getElementById("precio-min")?.value) || 0;
   const precioMax = parseFloat(document.getElementById("precio-max")?.value) || Infinity;
-
-  document.getElementById("input-busqueda")?.addEventListener("change", (e) => {
-  const query = e.target.value.trim();
-  if (query.length > 2) {
-    registrarEventoPstore("busqueda_producto", query);
-  }
 });
 
   return { filtros, textoBusqueda, precioMin, precioMax };
@@ -992,6 +986,12 @@ function configurarEventosBuscador() {
   document.getElementById("input-busqueda")?.addEventListener("input", () => {
     paginaActual = 1;
     aplicarFiltrosYPaginacion();
+  });
+  inputBusqueda.addEventListener("change", (e) => {
+    const query = e.target.value.trim();
+    if (query.length > 2) {
+      registrarEvento("busqueda_producto", query);
+    }
   });
 }
 
