@@ -305,12 +305,13 @@
 
         const eventos = data.eventos || [];
         renderizarMetricasEventos(eventos);
+        procesarAnaliticaAvanzada(eventos); 
 
       } catch (err) {
         console.error("Error al cargar los datos:", err);
         document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Error al conectar con la base de datos.</td></tr>`;
       }
-    }
+    }   
 
     function renderizarVentas(ventas) {
       let acumuladoMonto = 0;
@@ -523,6 +524,7 @@
       `;
     });
 }
+   
   </script>
 </body>
 </html>
