@@ -859,6 +859,7 @@ function enviarPedidoWhatsApp() {
   mensaje += `💳 *Método de Pago:* ${pago}`;
 
   // 🟢 REGISTRO DEL EVENTO EN EL DASHBOARD
+  const totalUnidades = carrito.reduce((acc, p) => acc + p.cantidad, 0);
   const resumenPedido = `${totalUnidades} productos | Total: $${totalFinal.toFixed(2)} | Cliente: ${nombre}`;
   registrarEvento("pedido_whatsapp", "carrito_checkout", resumenPedido);
 
