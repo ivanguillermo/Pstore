@@ -103,23 +103,36 @@ function actualizarIndicadorTasa() {
 }
 // Aplicar estilos y vista inicial de cuadrícula
 function aplicarConfiguracion(config) {
+  // 1. Aplicar variables CSS respetando el tema global
   if (config.estilosCSS) {
     Object.entries(config.estilosCSS).forEach(([prop, val]) => {
-      if (val) document.documentElement.style.setProperty(prop, val);
+      if (val && val.trim() !== "") {
+        // Limpiar comillas extras si vienen del CSV
+        const valLimpio = val.replace(/^['"]|['"]$/g, "").trim();
+        document.documentElement.style.setProperty(prop, valLimpio);
+      }
     });
   }
 
-  // Actualizar elementos dinámicos de la interfaz
+  // 2. Actualizar el nombre de la tienda en el DOM
   if (config.nombreTienda) {
+    // Sanear el texto: remover comas finales y espacios sobrantes
+    const nombreLimpio = config.nombreTienda.replace(/,+/g, "").trim();
     const logoTexts = document.querySelectorAll(".logo-text");
-    logoTexts.forEach(el => el.textContent = config.nombreTienda);
+    logoTexts.forEach(el => el.textContent = nombreLimpio);
   }
 
+  // 3. Actualizar la imagen del logo
   if (config.urlLogo) {
+    const urlLimpia = config.urlLogo.replace(/^['"]|['"]$/g, "").trim();
     const logoImgs = document.querySelectorAll(".logo img");
-    logoImgs.forEach(img => img.src = config.urlLogo);
+    logoImgs.forEach(img => {
+      img.src = urlLimpia;
+      img.onerror = () => { img.src = "assets/pstore.jpg"; }; // Fallback de imagen
+    });
   }
 
+  // 4. Configurar columnas en móvil
   const catalogo = document.getElementById("catalogo");
   const selectCol = document.getElementById("select-columnas");
   const vistaGuardada = localStorage.getItem("pstore_vista_grid");
@@ -137,18 +150,23 @@ async function sincronizarConGoogleSheets() {
 
   try {
     const res = await fetch(CONFIG_PSTORE.urlSheetConfig);
-    if (!res.ok) throw new Error("Error al obtener datos");
+    if (!res.ok) throw new Error("Error al obtener la configuración remota");
 
     const csvText = await res.text();
     const lineas = csvText.split("\n");
 
     lineas.forEach(linea => {
-      // Soporte para comas dentro de valores
+      if (!linea.trim()) return;
+
       const partes = linea.split(",");
       const param = partes[0]?.trim();
-      const valor = partes.slice(1).join(",")?.trim();
+      // Unir el resto de partes por si un valor contiene comas legítimas (ej. fuentes)
+      let valor = partes.slice(1).join(",")?.trim();
 
       if (!param || !valor) return;
+
+      // Limpiar comillas envolventes
+      valor = valor.replace(/^['"]|['"]$/g, "").trim();
 
       if (param === "tasa_bcv") {
         const tasaParsed = parseFloat(valor.replace(",", "."));
@@ -158,13 +176,12 @@ async function sincronizarConGoogleSheets() {
         }
       }
 
-      // Estilos CSS dinámicos (variables --)
+      // Procesar variables CSS
       if (param.startsWith("--")) {
-        // Limpiar comillas defectuosas si las hay
-        const valLimpio = valor.replace(/^['"]|['"]$/g, '');
-        CONFIG_PSTORE.estilosCSS[param] = valLimpio;
+        CONFIG_PSTORE.estilosCSS[param] = valor;
       }
 
+      // Parametros generales
       if (param === "columnas_movil_defecto") CONFIG_PSTORE.columnasMovilDefecto = valor;
       if (param === "numero_whatsapp") CONFIG_PSTORE.numeroWhatsapp = valor;
       if (param === "nombre_tienda") CONFIG_PSTORE.nombreTienda = valor;
@@ -180,7 +197,8 @@ async function sincronizarConGoogleSheets() {
 
     aplicarConfiguracion(CONFIG_PSTORE);
   } catch (error) {
-    console.warn("Usando configuración local de config.js:", error);
+    console.warn("Usando configuración local por defecto:", error);
+    aplicarConfiguracion(CONFIG_PSTORE);
   }
 }
 
