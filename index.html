@@ -52,15 +52,16 @@
   
   <!-- Script Crisp Chat -->
   <script type="text/javascript">window.$crisp=[];window.CRISP_WEBSITE_ID="eaa962b6-854e-4780-afc8-d1dff6bca29a";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();</script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'G-4N3BEFRW5Z');
+  </script>
 </head>
  
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-4N3BEFRW5Z');
-</script>
 <body>
 
   <!-- Overlay para el Menú Lateral -->
@@ -118,7 +119,7 @@
   
         <div class="filtro-grupo">
           <h4>Talla</h4>
-          <div id="grupo-tallas" class="tallas-grid"></div>
+          <div id="grupo-talla" class="tallas-grid"></div>
         </div>
   
         <div class="filtro-grupo">
@@ -144,10 +145,7 @@
       <a href="#" class="logo">
         <img src="assets/pstore.jpg" alt="Pstore">
         <span class="logo-text">Pstore</span>
-      </a>
-      <div class="busqueda-container">
-        <input type="text" id="input-busqueda" placeholder="Buscar producto...">
-      </div>
+      </a>     
       <div class="buscador-container">
         <input type="text" id="input-busqueda" placeholder="Buscar producto...">
         <button id="btn-voz" type="button" class="btn-icon" title="Buscar por voz">
