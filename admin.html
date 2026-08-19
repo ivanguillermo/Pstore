@@ -175,6 +175,70 @@
     </div>
   </div>
 
+  <!-- METRICAS AVANZADAS EN ADMIN1.HTML -->
+<div class="dashboard-container" style="padding: 1.5rem; background: #1a1d2e; color: #fff; border-radius: 12px; margin-top: 2rem;">
+  
+  <h2 style="color: #a78bfa; margin-top: 0;">📊 Analítica de Usuarios y Productos Líderes</h2>
+
+  <!-- TARJETAS DE RESUMEN -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+      <span style="font-size: 0.8rem; color: #9ca3af;">🔍 Búsquedas Totales</span>
+      <h3 id="stat-busquedas" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
+    </div>
+    <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #ef4444;">
+      <span style="font-size: 0.8rem; color: #9ca3af;">❤️ Total Likes</span>
+      <h3 id="stat-likes" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
+    </div>
+    <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
+      <span style="font-size: 0.8rem; color: #9ca3af;">📲 Total Compartidos</span>
+      <h3 id="stat-shares" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
+    </div>
+    <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
+      <span style="font-size: 0.8rem; color: #9ca3af;">📍 Ciudades Activas</span>
+      <h3 id="stat-ciudades" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
+    </div>
+  </div>
+
+  <!-- TABLAS DETALLADAS DE LÍDERES Y UBICACIÓN -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+    
+    <!-- TOP PRODUCTOS LÍDERES -->
+    <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
+      <h3 style="font-size: 1rem; color: #d4af37; margin-top: 0;">🏆 Productos Líderes (Likes vs. Compartidos)</h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+        <thead>
+          <tr style="border-bottom: 1px solid #374151; color: #9ca3af; text-align: left;">
+            <th style="padding: 0.5rem;">Producto</th>
+            <th style="padding: 0.5rem; text-align: center;">Likes</th>
+            <th style="padding: 0.5rem; text-align: center;">Compartidos</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-lideres">
+          <tr><td colspan="3" style="text-align:center; padding: 1rem; color: #888;">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TÉRMINOS MÁS BUSCADOS -->
+    <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
+      <h3 style="font-size: 1rem; color: #60a5fa; margin-top: 0;">🔍 Lo Más Buscado por los Usuarios</h3>
+      <ul id="lista-top-busquedas" style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem;">
+        <li style="color: #888;">Cargando...</li>
+      </ul>
+    </div>
+
+    <!-- DESGLOSE POR CIUDAD / ORIGEN -->
+    <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
+      <h3 style="font-size: 1rem; color: #34d399; margin-top: 0;">📍 ¿De dónde nos visitan/compran?</h3>
+      <div id="desglose-ciudades" style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
+        <span style="color: #888;">Cargando...</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
   <script>
     const ADMIN_EMAILS = ["ivanglopezp@gmail.com"]; // Agrega aquí otros correos autorizados
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec";
@@ -354,6 +418,111 @@
         `;
       });
     }
+
+    function procesarAnaliticaAvanzada(eventos) {
+  let busquedasCount = 0;
+  let likesCount = 0;
+  let sharesCount = 0;
+  
+  const conteoBusquedas = {};
+  const conteoProductos = {};
+  const conteoCiudades = {};
+
+  eventos.forEach(ev => {
+    const tipo = ev.evento || ev[2];
+    const detalle = ev.detalle || ev[3];
+    const extra = ev.extra || ev[4];
+    const ciudad = ev.ubicacion || ev[5] || "No especificada";
+
+    // Contar por Ciudad
+    conteoCiudades[ciudad] = (conteoCiudades[ciudad] || 0) + 1;
+
+    // Procesar Búsquedas
+    if (tipo === "busqueda_producto") {
+      busquedasCount++;
+      const busquedaClean = detalle.toLowerCase().trim();
+      conteoBusquedas[busquedaClean] = (conteoBusquedas[busquedaClean] || 0) + 1;
+    } 
+    // Procesar Likes / Favoritos
+    else if (tipo === "producto_favorito") {
+      likesCount++;
+      const prodKey = extra || detalle;
+      if (!conteoProductos[prodKey]) conteoProductos[prodKey] = { likes: 0, shares: 0 };
+      conteoProductos[prodKey].likes++;
+    } 
+    // Procesar Compartidos
+    else if (tipo === "producto_compartido") {
+      sharesCount++;
+      const prodKey = extra || detalle;
+      if (!conteoProductos[prodKey]) conteoProductos[prodKey] = { likes: 0, shares: 0 };
+      conteoProductos[prodKey].shares++;
+    }
+  });
+
+  // 1. Actualizar Tarjetas KPI
+  document.getElementById("stat-busquedas").textContent = busquedasCount;
+  document.getElementById("stat-likes").textContent = likesCount;
+  document.getElementById("stat-shares").textContent = sharesCount;
+  document.getElementById("stat-ciudades").textContent = Object.keys(conteoCiudades).length;
+
+  // 2. Renderizar Productos Líderes
+  const tbodyLideres = document.getElementById("tabla-lideres");
+  tbodyLideres.innerHTML = "";
+  
+  const lideresOrdenados = Object.entries(conteoProductos)
+    .sort((a, b) => (b[1].likes + b[1].shares) - (a[1].likes + a[1].shares))
+    .slice(0, 5);
+
+  if (lideresOrdenados.length === 0) {
+    tbodyLideres.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:1rem; color:#888;">Sin interacciones.</td></tr>`;
+  } else {
+    lideresOrdenados.forEach(([prod, stats]) => {
+      tbodyLideres.innerHTML += `
+        <tr style="border-bottom: 1px solid #2e344e;">
+          <td style="padding: 0.5rem;">${prod}</td>
+          <td style="padding: 0.5rem; text-align: center; color: #ef4444; font-weight: bold;">${stats.likes}</td>
+          <td style="padding: 0.5rem; text-align: center; color: #10b981; font-weight: bold;">${stats.shares}</td>
+        </tr>
+      `;
+    });
+  }
+
+  // 3. Renderizar Top Búsquedas
+  const listaBusquedas = document.getElementById("lista-top-busquedas");
+  listaBusquedas.innerHTML = "";
+  
+  const topBusquedas = Object.entries(conteoBusquedas)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  if (topBusquedas.length === 0) {
+    listaBusquedas.innerHTML = `<li style="color:#888;">No hay búsquedas registradas.</li>`;
+  } else {
+    topBusquedas.forEach(([termino, cantidad]) => {
+      listaBusquedas.innerHTML += `
+        <li style="display:flex; justify-content:space-between; padding: 0.4rem 0; border-bottom: 1px solid #2e344e;">
+          <span>🔍 "${termino}"</span>
+          <strong style="color: #60a5fa;">${cantidad} búsquedas</strong>
+        </li>
+      `;
+    });
+  }
+
+  // 4. Renderizar Ciudades de Origen
+  const divCiudades = document.getElementById("desglose-ciudades");
+  divCiudades.innerHTML = "";
+  
+  Object.entries(conteoCiudades)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([ciudad, count]) => {
+      divCiudades.innerHTML += `
+        <div style="display:flex; justify-content:space-between; background: #1a1d2e; padding: 0.5rem 0.8rem; border-radius: 6px;">
+          <span>📍 ${ciudad}</span>
+          <strong style="color: #34d399;">${count} interacciones</strong>
+        </div>
+      `;
+    });
+}
   </script>
 </body>
 </html>
