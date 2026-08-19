@@ -1066,49 +1066,5 @@ function actualizarMetaTag(atributo, clave, contenido) {
   element.setAttribute('content', contenido);
 }
 
-function activarBusquedaPorVoz() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  if (!SpeechRecognition) {
-    alert("Tu navegador o teléfono no soporta la búsqueda por voz. Intenta usar Chrome o Edge.");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = "es-VE"; // Reconocimiento configurado en español (Venezuela / Latinoamérica)
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  const btnVoz = document.getElementById("btn-voz");
-  const inputBusqueda = document.getElementById("input-busqueda");
-
-  // Indicador visual de escucha activa
-  if (btnVoz) btnVoz.classList.add("escuchando");
-
-  recognition.start();
-
-  recognition.onresult = (event) => {
-    const textoTranscrito = event.results[0][0].transcript;
-
-    if (inputBusqueda) {
-      inputBusqueda.value = textoTranscrito;
-      
-      // Reinicia la paginación a la página 1 y aplica el filtro
-      paginaActual = 1;
-      aplicarFiltrosYPaginacion();
-      
-      // Registrar evento de auditoría/métricas
-      registrarEvento("busqueda_por_voz", textoTranscrito);
-    }
-  };
-
-  recognition.onerror = (event) => {
-    console.warn("Error en el reconocimiento de voz:", event.error);
-    if (btnVoz) btnVoz.classList.remove("escuchando");
-  };
-
-  recognition.onend = () => {
-    if (btnVoz) btnVoz.classList.remove("escuchando");
-  };
-}
 
