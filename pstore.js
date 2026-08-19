@@ -109,14 +109,25 @@ function aplicarConfiguracion(config) {
     });
   }
 
+  // Actualizar elementos dinámicos de la interfaz
+  if (config.nombreTienda) {
+    const logoTexts = document.querySelectorAll(".logo-text");
+    logoTexts.forEach(el => el.textContent = config.nombreTienda);
+  }
+
+  if (config.urlLogo) {
+    const logoImgs = document.querySelectorAll(".logo img");
+    logoImgs.forEach(img => img.src = config.urlLogo);
+  }
+
   const catalogo = document.getElementById("catalogo");
   const selectCol = document.getElementById("select-columnas");
   const vistaGuardada = localStorage.getItem("pstore_vista_grid");
 
   if (!vistaGuardada && catalogo && config.columnasMovilDefecto) {
     catalogo.classList.remove("grid-1", "grid-2", "grid-4");
-    catalogo.classList.add(config.columnasMovilDefecto);
-    if (selectCol) selectCol.value = config.columnasMovilDefecto;
+    catalogo.classList.add(`grid-${config.columnasMovilDefecto}`);
+    if (selectCol) selectCol.value = `grid-${config.columnasMovilDefecto}`;
   }
 }
 
@@ -132,15 +143,29 @@ async function sincronizarConGoogleSheets() {
     const lineas = csvText.split("\n");
 
     lineas.forEach(linea => {
-      const [param, valor] = linea.split(",").map(item => item?.trim());
+      // Soporte para comas dentro de valores
+      const partes = linea.split(",");
+      const param = partes[0]?.trim();
+      const valor = partes.slice(1).join(",")?.trim();
+
       if (!param || !valor) return;
 
       if (param === "tasa_bcv") {
         const tasaParsed = parseFloat(valor.replace(",", "."));
-        if (!isNaN(tasaParsed) && tasaParsed > 0) tasaBcvActual = tasaParsed;
+        if (!isNaN(tasaParsed) && tasaParsed > 0) {
+          tasaBcvActual = tasaParsed;
+          actualizarIndicadorTasa();
+        }
       }
 
-      if (param.startsWith("--")) CONFIG_PSTORE.estilosCSS[param] = valor;
+      // Estilos CSS dinámicos (variables --)
+      if (param.startsWith("--")) {
+        // Limpiar comillas defectuosas si las hay
+        const valLimpio = valor.replace(/^['"]|['"]$/g, '');
+        CONFIG_PSTORE.estilosCSS[param] = valLimpio;
+      }
+
+      if (param === "columnas_movil_defecto") CONFIG_PSTORE.columnasMovilDefecto = valor;
       if (param === "numero_whatsapp") CONFIG_PSTORE.numeroWhatsapp = valor;
       if (param === "nombre_tienda") CONFIG_PSTORE.nombreTienda = valor;
       if (param === "url_logo") CONFIG_PSTORE.urlLogo = valor;
@@ -424,7 +449,6 @@ function obtenerFiltrosSeleccionados() {
   const textoBusqueda = document.getElementById("input-busqueda")?.value.toLowerCase().trim() || "";
   const precioMin = parseFloat(document.getElementById("precio-min")?.value) || 0;
   const precioMax = parseFloat(document.getElementById("precio-max")?.value) || Infinity;
-});
 
   return { filtros, textoBusqueda, precioMin, precioMax };
 }
@@ -983,10 +1007,14 @@ function poblarCategorias(productos) {
 }
 
 function configurarEventosBuscador() {
-  document.getElementById("input-busqueda")?.addEventListener("input", () => {
+  const inputBusqueda = document.getElementById("input-busqueda");
+  if (!inputBusqueda) return;
+
+  inputBusqueda.addEventListener("input", () => {
     paginaActual = 1;
     aplicarFiltrosYPaginacion();
   });
+
   inputBusqueda.addEventListener("change", (e) => {
     const query = e.target.value.trim();
     if (query.length > 2) {
