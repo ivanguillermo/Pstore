@@ -20,20 +20,28 @@ const URL_APPS_SCRIPT_EVENTOS = "https://script.google.com/macros/s/AKfycbzCCOFn
 
 function registrarEvento(nombreEvento, detalle = "", extra = "") {
   if (!URL_APPS_SCRIPT_EVENTOS || URL_APPS_SCRIPT_EVENTOS === "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/execAQUI_TU_URL_DE_APPS_SCRIPT") return;
-
+  const ubicacion = document.getElementById("cliente-ciudad")?.value || "No especificada";
+  const usuario = sessionStorage.getItem("user_email") || "Anónimo";
+  
   const payload = {
     evento: nombreEvento,
     detalle: detalle,
-    extra: extra
+    extra: extra,
+    ubicacion: ubicacion, // Ciudad del usuario
+    usuario: usuario,     // Correo si inició sesión
+    fecha: new Date().toISOString()
   };
 
-  fetch(URL_APPS_SCRIPT_EVENTOS, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    keepalive: true
-  }).catch(err => console.warn("No se pudo registrar el evento:", err));
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(CONFIG_PSTORE.scriptUrl, JSON.stringify(payload));
+  } else {
+    fetch(CONFIG_PSTORE.scriptUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).catch(e => console.error(e));
+  }
 }
 
 // 1. Algoritmo para mezclar elementos de forma aleatoria (Fisher-Yates)
@@ -416,6 +424,13 @@ function obtenerFiltrosSeleccionados() {
   const textoBusqueda = document.getElementById("input-busqueda")?.value.toLowerCase().trim() || "";
   const precioMin = parseFloat(document.getElementById("precio-min")?.value) || 0;
   const precioMax = parseFloat(document.getElementById("precio-max")?.value) || Infinity;
+
+  document.getElementById("input-busqueda")?.addEventListener("change", (e) => {
+  const query = e.target.value.trim();
+  if (query.length > 2) {
+    registrarEventoPstore("busqueda_producto", query);
+  }
+});
 
   return { filtros, textoBusqueda, precioMin, precioMax };
 }
