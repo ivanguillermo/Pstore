@@ -211,6 +211,7 @@ select:focus {
   font-weight: 600;
   margin-bottom: 0.5rem;
   line-height: 1.3;
+  color: var(--brand-gold);
 }
 
 .tarjeta .descripcion {
@@ -228,7 +229,7 @@ select:focus {
 .tarjeta .precio {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--brand-black);
+  color: var(--brand-gold);
   margin-top: auto;
 }
 
@@ -1229,7 +1230,7 @@ footer {
 }
 
 .btn-pagina {
-  background: var(--bg-card, #1e1e1e);
+  background: var(--brand-black, #1e1e1e);
   color: #fff;
   border: 1px solid var(--border-color, #333);
   padding: 0.5rem 0.8rem;
