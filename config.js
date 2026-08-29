@@ -23,13 +23,5 @@ const CONFIG_PSTORE = {
   urlSheetConfig: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=1458625703&single=true&output=csv",
 
   // 4. Estilos CSS por defecto (Variables :root)
-  estilosCSS: {
-    "--brand-black": "#111111",
-    "--brand-gold": "#d4af37",
-    "--bg-main": "#0d0d0d",
-    "--bg-card": "#1e1e1e",
-    "--text-primary": "#ffffff",
-    "--text-secondary": "#a0a0a0",
-    "--border-color": "#333333"
-  }
+  
 };
