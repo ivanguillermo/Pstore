@@ -866,15 +866,15 @@ footer {
 }
 
 .btn-share-circle.wa {
-  background-color: #25d366;
+  background-color:  var(--brand-gold);
   color: #ffffff;
-  border-color: #25d366;
+  border-color:  var(--brand-gold);
 }
 
 .btn-share-circle.fb {
-  background-color: #1877f2;
+  background-color: var(--brand-gold);
   color: #ffffff;
-  border-color: #1877f2;
+  border-color:  var(--brand-gold);
 }
 /* ==========================================
    MENÚ LATERAL CORREGIDO
