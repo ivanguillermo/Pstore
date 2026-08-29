@@ -625,7 +625,7 @@ footer {
 }
 
 .footer-col a:hover {
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .cobertura-footer {
