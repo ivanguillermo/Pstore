@@ -481,6 +481,7 @@ function normalizarLlave(llave) {
 
 function normalizarProductos(filas) {
   return filas.map((f, idx) => {
+    if (!fila[0] || !fila[1]) return;
     const objetoNormalizado = {};
     Object.keys(f).forEach((llaveOriginal) => {
       const limpia = normalizarLlave(llaveOriginal);
