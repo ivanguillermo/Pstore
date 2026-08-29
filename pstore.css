@@ -625,7 +625,7 @@ footer {
 }
 
 .footer-col a:hover {
-  color: var(--text-secondary);
+  text-decoration: underline;
 }
 
 .cobertura-footer {
@@ -651,7 +651,8 @@ footer {
 }
 
 .redes-sociales a:hover .icon-social {
-  stroke: var(--text-primary);
+  width: 19px;
+  height: 19px;
 }
 
 .footer-bottom {
