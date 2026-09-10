@@ -886,37 +886,96 @@ function enviarPedidoWhatsApp() {
   const nombreInput = document.getElementById("cliente-nombre")?.value.trim();
   const nombre = clienteActual ? clienteActual.nombre : (nombreInput || "Cliente");
   const ciudad = document.getElementById("cliente-ciudad")?.value || "";
-  const pago = document.getElementById("cliente-pago")?.value || "";
+  const metodoPago = document.getElementById("cliente-pago")?.value || "Efectivo / Transferencia";
+  const telefonoCliente = document.getElementById("cliente-telefono")?.value || "N/A";
+  const correoCliente = document.getElementById("cliente-correo")?.value || (sessionStorage.getItem("user_email") || "N/A");
+  const tipoPedido = document.getElementById("tipo-pedido")?.value || "Delivery";
+  const direccionCliente = document.getElementById("cliente-direccion")?.value || ciudad || "N/A";
+  const referenciaPagoMovil = document.getElementById("cliente-pagomovil")?.value || "N/A";
 
-  let mensaje = `🛒 *¡Hola Pstore! Quisiera realizar el siguiente pedido:*\n\n`;
-  let total = 0;
+  // 1. Cálculos de subtotales y totales
+  let subtotal = 0;
+  let resumenProductosArr = [];
 
   carrito.forEach((prod) => {
-    const subtotal = prod.precio * prod.cantidad;
-    total += subtotal;
-    mensaje += `• ${prod.cantidad}x ${prod.nombre} - $${subtotal.toFixed(2)}\n`;
+    const itemSubtotal = prod.precio * prod.cantidad;
+    subtotal += itemSubtotal;
+    resumenProductosArr.push(`${prod.cantidad}x ${prod.nombre} ($${prod.precio.toFixed(2)})`);
   });
 
-  let totalFinal = total;
+  let totalUSD = subtotal;
   if (clienteActual && clienteActual.descuento > 0) {
-    const montoDescuento = (total * clienteActual.descuento) / 100;
-    totalFinal = total - montoDescuento;
-    mensaje += `\n🏷️ *Descuento VIP (${clienteActual.descuento}%):* -$${montoDescuento.toFixed(2)}\n`;
+    const montoDescuento = (subtotal * clienteActual.descuento) / 100;
+    totalUSD = subtotal - montoDescuento;
   }
 
-  mensaje += `💰 *Total a Pagar:* $${totalFinal.toFixed(2)}\n`;
-  mensaje += `-----------------------------\n`;
-  mensaje += `👤 *Cliente:* ${nombre} ${clienteActual ? '⭐ [Cliente Registrado]' : ''}\n`;
-  mensaje += `📍 *Ubicación:* ${ciudad}\n`;
-  mensaje += `💳 *Método de Pago:* ${pago}`;
+  const totalBolivares = tasaBcvActual ? (totalUSD * tasaBcvActual) : 0;
+  
+  // 2. Generación de ID de pedido y fecha legible
+  const idPedido = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+  const fechaHora = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  const resumenProductosTexto = resumenProductosArr.join("; ");
 
-  // 🟢 REGISTRO DEL EVENTO EN EL DASHBOARD
+  // 3. Estructurar el JSON que mandaremos al Apps Script (pstore.gs)
+  const payloadPreorden = {
+    action: "crear_preorden",
+    idPedido: idPedido,
+    fechaHora: fechaHora,
+    nombreCliente: nombre,
+    correo: correoCliente,
+    tlf: telefonoCliente,
+    productos: resumenProductosTexto,
+    subtotal: subtotal.toFixed(2),
+    tipoPedido: tipoPedido,
+    direccion: direccionCliente,
+    metodoPago: metodoPago,
+    pagoMovil: referenciaPagoMovil,
+    totalUSD: totalUSD.toFixed(2),
+    totalBolivares: totalBolivares.toFixed(2),
+    estadoOrden: "Pendiente"
+  };
+
+  // 4. Enviar los datos en segundo plano a Google Sheets usando la misma URL de tu Apps Script
+  const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec";
+  
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(URL_APPS_SCRIPT, JSON.stringify(payloadPreorden));
+  } else {
+    fetch(URL_APPS_SCRIPT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payloadPreorden)
+    }).catch(err => console.error("Error al registrar preorden:", err));
+  }
+
+  // 🟢 REGISTRO TAMBIÉN EN EL DASHBOARD DE EVENTOS (Opcional)
   const totalUnidades = carrito.reduce((acc, p) => acc + p.cantidad, 0);
-  const resumenPedido = `${totalUnidades} productos | Total: $${totalFinal.toFixed(2)} | Cliente: ${nombre}`;
-  registrarEvento("pedido_whatsapp", "carrito_checkout", resumenPedido);
+  registrarEvento("pedido_whatsapp", "carrito_checkout", `${totalUnidades} prod | ID: ${idPedido} | Total: $${totalUSD.toFixed(2)}`);
 
-  const telefono = CONFIG_PSTORE.numeroWhatsapp || "584126216661";
-  window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank");
+  // 5. Construcción del mensaje visual para WhatsApp
+  let mensajeWp = `🛒 *¡Nuevo Pedido en Pstore!* \n` +
+                  `🆔 *ID:* ${idPedido}\n` +
+                  `👤 *Cliente:* ${nombre} ${clienteActual ? '⭐ [VIP]' : ''}\n` +
+                  `📞 *TLF:* ${telefonoCliente}\n\n` +
+                  `📦 *Productos:*\n` + carrito.map(p => `• ${p.cantidad}x ${p.nombre} ($${p.precio.toFixed(2)})`).join("\n") + `\n\n`;
+
+  if (clienteActual && clienteActual.descuento > 0) {
+    mensajeWp += `🏷️ *Subtotal:* $${subtotal.toFixed(2)}\n`;
+    mensajeWp += `✨ *Descuento VIP (${clienteActual.descuento}%):* Aplicado\n`;
+  }
+
+  mensajeWp += `💰 *Total USD:* $${totalUSD.toFixed(2)}\n`;
+  if (tasaBcvActual) {
+    mensajeWp += `🇻🇪 *Total Bs:* Bs. ${totalBolivares.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+  }
+  mensajeWp += `-----------------------------\n` +
+               `💳 *Método de Pago:* ${metodoPago}\n` +
+               `📍 *Tipo / Dirección:* ${tipoPedido} - ${direccionCliente}`;
+
+  // 6. Abrir WhatsApp con el pedido redactado
+  const telefonoTienda = CONFIG_PSTORE.numeroWhatsapp || "584126216661";
+  window.open(`https://wa.me/${telefonoTienda}?text=${encodeURIComponent(mensajeWp)}`, "_blank");
 }
 // ==========================================
 // MÓDULO DE WISHLIST Y FAVORITOS
