@@ -35,7 +35,7 @@
 
     /* DASHBOARD (OCULTO POR DEFECTO) */
     #dashboardContent { display: none; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
     h1 { margin: 0; font-size: 24px; color: #111; }
     
     /* Tarjetas KPI */
@@ -52,7 +52,7 @@
     th { background-color: #f8fafc; color: #64748b; font-weight: 600; }
     tr:hover { background-color: #f8fafc; }
     
-    .btn-logout { background-color: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-left: 10px; }
+    .btn-logout { background-color: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
     .btn-refresh { background-color: #000; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
   </style>
 </head>
@@ -78,14 +78,14 @@
   <!-- PANTALLA 2: Contenido Protegido (Dashboard) -->
   <div id="dashboardContent">
     <div class="header">
-      <h1>📊 Dashboard de Ventas - Pstore</h1>
+      <h1>📊 Dashboard de Ventas & Analítica - Pstore</h1>
       <div>
         <button class="btn-refresh" onclick="actualizarTodo()">🔄 Actualizar</button>
         <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
       </div>
     </div>
 
-    <!-- Métricas Generales -->
+    <!-- Métricas Generales Ventas -->
     <div class="kpi-grid">
       <div class="card">
         <h3>Ventas Totales</h3>
@@ -103,7 +103,7 @@
 
     <!-- Tabla de Ventas -->
     <div class="table-container">
-      <h3>Últimos Pedidos</h3>
+      <h3>Últimos Pedidos / Preordenes</h3>
       <table>
         <thead>
           <tr>
@@ -121,126 +121,72 @@
       </table>
     </div>
 
-    <!-- DASHBOARD DE EVENTOS Y MÉTRICAS PSTORE (AHORA PROTEGIDO DENTRO DEL DASHBOARD) -->
-    <div class="dashboard-container" style="padding: 1.5rem; background: #1a1d2e; color: #fff; border-radius: 12px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; color: #a78bfa;">📊 Métricas y Analítica de Eventos</h2>
-      </div>
+    <!-- DASHBOARD DE EVENTOS Y MÉTRICAS PSTORE UNIFICADO -->
+    <div class="dashboard-container" style="padding: 1.5rem; background: #1a1d2e; color: #fff; border-radius: 12px; margin-bottom: 2rem;">
+      <h2 style="color: #a78bfa; margin-top: 0; margin-bottom: 1.5rem;">📊 Analítica de Usuarios, Tráfico y Productos</h2>
 
-      <!-- TARJETAS DE RESUMEN RÁPIDO -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+      <!-- TARJETAS DE RESUMEN DE EVENTOS -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+          <span style="font-size: 0.8rem; color: #9ca3af;">🔍 Búsquedas Totales</span>
+          <h3 id="stat-busquedas" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
+        </div>
         <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #ef4444;">
-          <span style="font-size: 0.85rem; color: #9ca3af;">Total Favoritos (❤️)</span>
-          <h3 id="stat-favoritos" style="font-size: 1.8rem; margin-top: 0.25rem;">0</h3>
+          <span style="font-size: 0.8rem; color: #9ca3af;">❤️ Total Likes</span>
+          <h3 id="stat-likes" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
         </div>
         <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
-          <span style="font-size: 0.85rem; color: #9ca3af;">Clicks Pedidos (💬)</span>
-          <h3 id="stat-pedidos" style="font-size: 1.8rem; margin-top: 0.25rem;">0</h3>
-        </div>
-        <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
-          <span style="font-size: 0.85rem; color: #9ca3af;">Compartidos (🔗)</span>
-          <h3 id="stat-compartidos" style="font-size: 1.8rem; margin-top: 0.25rem;">0</h3>
+          <span style="font-size: 0.8rem; color: #9ca3af;">📲 Total Compartidos</span>
+          <h3 id="stat-shares" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
         </div>
         <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
-          <span style="font-size: 0.85rem; color: #9ca3af;">Total Eventos</span>
-          <h3 id="stat-total" style="font-size: 1.8rem; margin-top: 0.25rem;">0</h3>
+          <span style="font-size: 0.8rem; color: #9ca3af;">📍 Ciudades Activas</span>
+          <h3 id="stat-ciudades" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
         </div>
       </div>
 
-      <!-- TABLAS DE TOP PRODUCTOS Y ACTIVIDAD RECIENTE -->
+      <!-- TABLAS DETALLADAS DE LÍDERES Y UBICACIÓN -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        
+        <!-- TOP PRODUCTOS LÍDERES -->
         <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: #d4af37;">🔥 Top Productos más Populares</h3>
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <h3 style="font-size: 1rem; color: #d4af37; margin-top: 0;">🏆 Productos Líderes (Likes vs. Compartidos)</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
             <thead>
-              <tr style="border-bottom: 1px solid #374151; text-align: left; color: #9ca3af;">
+              <tr style="border-bottom: 1px solid #374151; color: #9ca3af; text-align: left;">
                 <th style="padding: 0.5rem;">Producto</th>
-                <th style="padding: 0.5rem; text-align: center;">Favoritos</th>
+                <th style="padding: 0.5rem; text-align: center;">Likes</th>
                 <th style="padding: 0.5rem; text-align: center;">Compartidos</th>
               </tr>
             </thead>
-            <tbody id="tabla-top-productos">
-              <tr><td colspan="3" style="padding: 1rem; text-align: center; color: #9ca3af;">Cargando datos...</td></tr>
+            <tbody id="tabla-lideres">
+              <tr><td colspan="3" style="text-align:center; padding: 1rem; color: #888;">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
 
+        <!-- TÉRMINOS MÁS BUSCADOS -->
         <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: #a78bfa;">🕒 Última Actividad de Usuarios</h3>
-          <div id="lista-actividad-reciente" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem;">
-            <span style="color: #9ca3af;">Cargando actividad...</span>
+          <h3 style="font-size: 1rem; color: #60a5fa; margin-top: 0;">🔍 Lo Más Buscado por los Usuarios</h3>
+          <ul id="lista-top-busquedas" style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem;">
+            <li style="color: #888;">Cargando...</li>
+          </ul>
+        </div>
+
+        <!-- DESGLOSE POR CIUDAD / ORIGEN -->
+        <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
+          <h3 style="font-size: 1rem; color: #34d399; margin-top: 0;">📍 ¿De dónde nos visitan?</h3>
+          <div id="desglose-ciudades" style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; max-height: 220px; overflow-y: auto;">
+            <span style="color: #888;">Cargando...</span>
           </div>
         </div>
+
       </div>
     </div>
   </div>
-
-  <!-- METRICAS AVANZADAS EN ADMIN1.HTML -->
-<div class="dashboard-container" style="padding: 1.5rem; background: #1a1d2e; color: #fff; border-radius: 12px; margin-top: 2rem;">
-  
-  <h2 style="color: #a78bfa; margin-top: 0;">📊 Analítica de Usuarios y Productos Líderes</h2>
-
-  <!-- TARJETAS DE RESUMEN -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-    <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
-      <span style="font-size: 0.8rem; color: #9ca3af;">🔍 Búsquedas Totales</span>
-      <h3 id="stat-busquedas" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
-    </div>
-    <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #ef4444;">
-      <span style="font-size: 0.8rem; color: #9ca3af;">❤️ Total Likes</span>
-      <h3 id="stat-likes" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
-    </div>
-    <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
-      <span style="font-size: 0.8rem; color: #9ca3af;">📲 Total Compartidos</span>
-      <h3 id="stat-shares" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
-    </div>
-    <div style="background: #23273e; padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
-      <span style="font-size: 0.8rem; color: #9ca3af;">📍 Ciudades Activas</span>
-      <h3 id="stat-ciudades" style="font-size: 1.6rem; margin: 0.3rem 0 0 0;">0</h3>
-    </div>
-  </div>
-
-  <!-- TABLAS DETALLADAS DE LÍDERES Y UBICACIÓN -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
-    
-    <!-- TOP PRODUCTOS LÍDERES -->
-    <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
-      <h3 style="font-size: 1rem; color: #d4af37; margin-top: 0;">🏆 Productos Líderes (Likes vs. Compartidos)</h3>
-      <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-        <thead>
-          <tr style="border-bottom: 1px solid #374151; color: #9ca3af; text-align: left;">
-            <th style="padding: 0.5rem;">Producto</th>
-            <th style="padding: 0.5rem; text-align: center;">Likes</th>
-            <th style="padding: 0.5rem; text-align: center;">Compartidos</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-lideres">
-          <tr><td colspan="3" style="text-align:center; padding: 1rem; color: #888;">Cargando...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- TÉRMINOS MÁS BUSCADOS -->
-    <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
-      <h3 style="font-size: 1rem; color: #60a5fa; margin-top: 0;">🔍 Lo Más Buscado por los Usuarios</h3>
-      <ul id="lista-top-busquedas" style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem;">
-        <li style="color: #888;">Cargando...</li>
-      </ul>
-    </div>
-
-    <!-- DESGLOSE POR CIUDAD / ORIGEN -->
-    <div style="background: #23273e; padding: 1.2rem; border-radius: 8px;">
-      <h3 style="font-size: 1rem; color: #34d399; margin-top: 0;">📍 ¿De dónde nos visitan/compran?</h3>
-      <div id="desglose-ciudades" style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
-        <span style="color: #888;">Cargando...</span>
-      </div>
-    </div>
-
-  </div>
-</div>
 
   <script>
-    const ADMIN_EMAILS = ["ivanglopezp@gmail.com"]; // Agrega aquí otros correos autorizados
+    const ADMIN_EMAILS = ["ivanglopezp@gmail.com"]; 
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec";
 
     function parseJwt(token) {
@@ -304,7 +250,6 @@
         renderizarVentas(listaVentas);
 
         const eventos = data.eventos || [];
-        renderizarMetricasEventos(eventos);
         procesarAnaliticaAvanzada(eventos); 
 
       } catch (err) {
@@ -319,7 +264,7 @@
       let htmlTabla = "";
 
       if (cantidadPedidos === 0) {
-        document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="4" style="text-align:center;">No hay registro de ventas aún.</td></tr>`;
+        document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">No hay registro de ventas aún.</td></tr>`;
         document.getElementById('totalMonto').innerText = "$0.00";
         document.getElementById('totalPedidos').innerText = "0";
         document.getElementById('ticketPromedio').innerText = "$0.00";
@@ -352,179 +297,111 @@
       document.getElementById('tablaCuerpo').innerHTML = htmlTabla;
     }
 
-    function renderizarMetricasEventos(eventos) {
-      let favCount = 0;
-      let pedidoCount = 0;
-      let shareCount = 0;
+    function procesarAnaliticaAvanzada(eventos) {
+      let busquedasCount = 0;
+      let likesCount = 0;
+      let sharesCount = 0;
+      
+      const conteoBusquedas = {};
       const conteoProductos = {};
+      const conteoCiudades = {};
 
       eventos.forEach(ev => {
-        const tipo = ev.evento || ev[1];
-        const idProd = ev.detalle || ev[2];
-        const nombreProd = ev.extra || ev[3] || idProd;
+        // Soporta tanto objetos JSON como arrays devueltos por Google Sheets
+        const tipo = ev.evento || ev[2];
+        const detalle = ev.detalle || ev[3];
+        const extra = ev.extra || ev[4];
+        const ciudad = ev.ubicacion || ev[5] || "No especificada";
 
-        if (tipo === "producto_favorito") {
-          favCount++;
-          if (!conteoProductos[nombreProd]) conteoProductos[nombreProd] = { favs: 0, shares: 0 };
-          conteoProductos[nombreProd].favs++;
-        } else if (tipo === "pedido_whatsapp") {
-          pedidoCount++;
-        } else if (tipo === "producto_compartido") {
-          shareCount++;
-          if (!conteoProductos[nombreProd]) conteoProductos[nombreProd] = { favs: 0, shares: 0 };
-          conteoProductos[nombreProd].shares++;
+        conteoCiudades[ciudad] = (conteoCiudades[ciudad] || 0) + 1;
+
+        if (tipo === "busqueda_producto" && detalle) {
+          busquedasCount++;
+          const busquedaClean = String(detalle).toLowerCase().trim();
+          conteoBusquedas[busquedaClean] = (conteoBusquedas[busquedaClean] || 0) + 1;
+        } 
+        else if (tipo === "producto_favorito") {
+          likesCount++;
+          const prodKey = extra || detalle || "Desconocido";
+          if (!conteoProductos[prodKey]) conteoProductos[prodKey] = { likes: 0, shares: 0 };
+          conteoProductos[prodKey].likes++;
+        } 
+        else if (tipo === "producto_compartido") {
+          sharesCount++;
+          const prodKey = extra || detalle || "Desconocido";
+          if (!conteoProductos[prodKey]) conteoProductos[prodKey] = { likes: 0, shares: 0 };
+          conteoProductos[prodKey].shares++;
         }
       });
 
-      document.getElementById("stat-favoritos").textContent = favCount;
-      document.getElementById("stat-pedidos").textContent = pedidoCount;
-      document.getElementById("stat-compartidos").textContent = shareCount;
-      document.getElementById("stat-total").textContent = eventos.length;
+      // 1. Actualizar Tarjetas KPI
+      document.getElementById("stat-busquedas").textContent = busquedasCount;
+      document.getElementById("stat-likes").textContent = likesCount;
+      document.getElementById("stat-shares").textContent = sharesCount;
+      document.getElementById("stat-ciudades").textContent = Object.keys(conteoCiudades).length;
 
-      const tbody = document.getElementById("tabla-top-productos");
-      tbody.innerHTML = "";
+      // 2. Renderizar Productos Líderes
+      const tbodyLideres = document.getElementById("tabla-lideres");
+      tbodyLideres.innerHTML = "";
       
-      const productosOrdenados = Object.entries(conteoProductos)
-        .sort((a, b) => (b[1].favs + b[1].shares) - (a[1].favs + a[1].shares))
+      const lideresOrdenados = Object.entries(conteoProductos)
+        .sort((a, b) => (b[1].likes + b[1].shares) - (a[1].likes + a[1].shares))
         .slice(0, 5);
 
-      if (productosOrdenados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="padding: 1rem; text-align: center; color: #9ca3af;">Sin interacciones registradas.</td></tr>`;
+      if (lideresOrdenados.length === 0) {
+        tbodyLideres.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:1rem; color:#888;">Sin interacciones.</td></tr>`;
       } else {
-        productosOrdenados.forEach(([nombre, stats]) => {
-          tbody.innerHTML += `
+        lideresOrdenados.forEach(([prod, stats]) => {
+          tbodyLideres.innerHTML += `
             <tr style="border-bottom: 1px solid #2e344e;">
-              <td style="padding: 0.6rem;">${nombre}</td>
-              <td style="padding: 0.6rem; text-align: center; color: #ef4444; font-weight: bold;">${stats.favs}</td>
-              <td style="padding: 0.6rem; text-align: center; color: #3b82f6; font-weight: bold;">${stats.shares}</td>
+              <td style="padding: 0.5rem;">${prod}</td>
+              <td style="padding: 0.5rem; text-align: center; color: #ef4444; font-weight: bold;">${stats.likes}</td>
+              <td style="padding: 0.5rem; text-align: center; color: #10b981; font-weight: bold;">${stats.shares}</td>
             </tr>
           `;
         });
       }
 
-      const containerActividad = document.getElementById("lista-actividad-reciente");
-      containerActividad.innerHTML = "";
+      // 3. Renderizar Top Búsquedas
+      const listaBusquedas = document.getElementById("lista-top-busquedas");
+      listaBusquedas.innerHTML = "";
+      
+      const topBusquedas = Object.entries(conteoBusquedas)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
 
-      const ultimosEventos = eventos.slice(-8).reverse();
-      ultimosEventos.forEach(ev => {
-        const fecha = ev.fecha ? new Date(ev.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Hace un momento";
-        const tipo = ev.evento || ev[1];
-        const detalle = ev.extra || ev[3] || ev.detalle || ev[2];
+      if (topBusquedas.length === 0) {
+        listaBusquedas.innerHTML = `<li style="color:#888;">No hay búsquedas registradas.</li>`;
+      } else {
+        topBusquedas.forEach(([termino, cantidad]) => {
+          listaBusquedas.innerHTML += `
+            <li style="display:flex; justify-content:space-between; padding: 0.4rem 0; border-bottom: 1px solid #2e344e;">
+              <span>🔍 "${termino}"</span>
+              <strong style="color: #60a5fa;">${cantidad} búsquedas</strong>
+            </li>
+          `;
+        });
+      }
 
-        containerActividad.innerHTML += `
-          <div style="background: #1a1d2e; padding: 0.6rem 0.8rem; border-radius: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
-            <span><strong>${tipo}</strong>: ${detalle}</span>
-            <span style="color: #9ca3af; font-size: 0.75rem;">${fecha}</span>
-          </div>
-        `;
-      });
+      // 4. Renderizar Ciudades de Origen
+      const divCiudades = document.getElementById("desglose-ciudades");
+      divCiudades.innerHTML = "";
+      
+      const ciudadesOrdenadas = Object.entries(conteoCiudades).sort((a, b) => b[1] - a[1]);
+
+      if (ciudadesOrdenadas.length === 0) {
+        divCiudades.innerHTML = `<span style="color:#888;">Sin datos de ubicación.</span>`;
+      } else {
+        ciudadesOrdenadas.forEach(([ciudad, count]) => {
+          divCiudades.innerHTML += `
+            <div style="display:flex; justify-content:space-between; background: #1a1d2e; padding: 0.5rem 0.8rem; border-radius: 6px;">
+              <span>📍 ${ciudad}</span>
+              <strong style="color: #34d399;">${count}</strong>
+            </div>
+          `;
+        });
+      }
     }
-
-    function procesarAnaliticaAvanzada(eventos) {
-  let busquedasCount = 0;
-  let likesCount = 0;
-  let sharesCount = 0;
-  
-  const conteoBusquedas = {};
-  const conteoProductos = {};
-  const conteoCiudades = {};
-
-  eventos.forEach(ev => {
-    const tipo = ev.evento || ev[2];
-    const detalle = ev.detalle || ev[3];
-    const extra = ev.extra || ev[4];
-    const ciudad = ev.ubicacion || ev[5] || "No especificada";
-
-    // Contar por Ciudad
-    conteoCiudades[ciudad] = (conteoCiudades[ciudad] || 0) + 1;
-
-    // Procesar Búsquedas
-    if (tipo === "busqueda_producto") {
-      busquedasCount++;
-      const busquedaClean = detalle.toLowerCase().trim();
-      conteoBusquedas[busquedaClean] = (conteoBusquedas[busquedaClean] || 0) + 1;
-    } 
-    // Procesar Likes / Favoritos
-    else if (tipo === "producto_favorito") {
-      likesCount++;
-      const prodKey = extra || detalle;
-      if (!conteoProductos[prodKey]) conteoProductos[prodKey] = { likes: 0, shares: 0 };
-      conteoProductos[prodKey].likes++;
-    } 
-    // Procesar Compartidos
-    else if (tipo === "producto_compartido") {
-      sharesCount++;
-      const prodKey = extra || detalle;
-      if (!conteoProductos[prodKey]) conteoProductos[prodKey] = { likes: 0, shares: 0 };
-      conteoProductos[prodKey].shares++;
-    }
-  });
-
-  // 1. Actualizar Tarjetas KPI
-  document.getElementById("stat-busquedas").textContent = busquedasCount;
-  document.getElementById("stat-likes").textContent = likesCount;
-  document.getElementById("stat-shares").textContent = sharesCount;
-  document.getElementById("stat-ciudades").textContent = Object.keys(conteoCiudades).length;
-
-  // 2. Renderizar Productos Líderes
-  const tbodyLideres = document.getElementById("tabla-lideres");
-  tbodyLideres.innerHTML = "";
-  
-  const lideresOrdenados = Object.entries(conteoProductos)
-    .sort((a, b) => (b[1].likes + b[1].shares) - (a[1].likes + a[1].shares))
-    .slice(0, 5);
-
-  if (lideresOrdenados.length === 0) {
-    tbodyLideres.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:1rem; color:#888;">Sin interacciones.</td></tr>`;
-  } else {
-    lideresOrdenados.forEach(([prod, stats]) => {
-      tbodyLideres.innerHTML += `
-        <tr style="border-bottom: 1px solid #2e344e;">
-          <td style="padding: 0.5rem;">${prod}</td>
-          <td style="padding: 0.5rem; text-align: center; color: #ef4444; font-weight: bold;">${stats.likes}</td>
-          <td style="padding: 0.5rem; text-align: center; color: #10b981; font-weight: bold;">${stats.shares}</td>
-        </tr>
-      `;
-    });
-  }
-
-  // 3. Renderizar Top Búsquedas
-  const listaBusquedas = document.getElementById("lista-top-busquedas");
-  listaBusquedas.innerHTML = "";
-  
-  const topBusquedas = Object.entries(conteoBusquedas)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  if (topBusquedas.length === 0) {
-    listaBusquedas.innerHTML = `<li style="color:#888;">No hay búsquedas registradas.</li>`;
-  } else {
-    topBusquedas.forEach(([termino, cantidad]) => {
-      listaBusquedas.innerHTML += `
-        <li style="display:flex; justify-content:space-between; padding: 0.4rem 0; border-bottom: 1px solid #2e344e;">
-          <span>🔍 "${termino}"</span>
-          <strong style="color: #60a5fa;">${cantidad} búsquedas</strong>
-        </li>
-      `;
-    });
-  }
-
-  // 4. Renderizar Ciudades de Origen
-  const divCiudades = document.getElementById("desglose-ciudades");
-  divCiudades.innerHTML = "";
-  
-  Object.entries(conteoCiudades)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([ciudad, count]) => {
-      divCiudades.innerHTML += `
-        <div style="display:flex; justify-content:space-between; background: #1a1d2e; padding: 0.5rem 0.8rem; border-radius: 6px;">
-          <span>📍 ${ciudad}</span>
-          <strong style="color: #34d399;">${count} interacciones</strong>
-        </div>
-      `;
-    });
-}
-   
   </script>
 </body>
 </html>
