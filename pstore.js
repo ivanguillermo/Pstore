@@ -893,14 +893,16 @@ function enviarPedidoWhatsApp() {
   const direccionCliente = document.getElementById("cliente-direccion")?.value || ciudad || "N/A";
   const referenciaPagoMovil = document.getElementById("cliente-pagomovil")?.value || "N/A";
 
-  // 1. Cálculos de subtotales y totales
+  // 1. Cálculos de subtotales y formato estricto de productos: ID,cantidad,ID,cantidad
   let subtotal = 0;
-  let resumenProductosArr = [];
+  let productosArray = [];
 
   carrito.forEach((prod) => {
     const itemSubtotal = prod.precio * prod.cantidad;
     subtotal += itemSubtotal;
-    resumenProductosArr.push(`${prod.cantidad}x ${prod.nombre} ($${prod.precio.toFixed(2)})`);
+    // Asegurar el formato: ID,cantidad
+    const idProd = prod.id || prod.nombre; // Usa el ID del producto
+    productosArray.push(`${idProd},${prod.cantidad}`);
   });
 
   let totalUSD = subtotal;
@@ -914,9 +916,9 @@ function enviarPedidoWhatsApp() {
   // 2. Generación de ID de pedido y fecha legible
   const idPedido = "ORD-" + Math.floor(100000 + Math.random() * 900000);
   const fechaHora = new Date().toISOString().replace('T', ' ').substring(0, 19);
-  const resumenProductosTexto = resumenProductosArr.join("; ");
+  const productosFormateados = productosArray.join(",");
 
-  // 3. Estructurar el JSON que mandaremos al Apps Script (pstore.gs)
+  // 3. Estructurar el JSON para el Apps Script
   const payloadPreorden = {
     action: "crear_preorden",
     idPedido: idPedido,
@@ -924,7 +926,7 @@ function enviarPedidoWhatsApp() {
     nombreCliente: nombre,
     correo: correoCliente,
     tlf: telefonoCliente,
-    productos: resumenProductosTexto,
+    productos: productosFormateados,
     subtotal: subtotal.toFixed(2),
     tipoPedido: tipoPedido,
     direccion: direccionCliente,
@@ -935,8 +937,8 @@ function enviarPedidoWhatsApp() {
     estadoOrden: "Pendiente"
   };
 
-  // 4. Enviar los datos en segundo plano a Google Sheets usando la misma URL de tu Apps Script
-  const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec";
+  // 4. Enviar los datos a Google Apps Script
+  const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzEgXQxewVbQSo_7CfL-G0mZCBiuMqM-XLaUGVYgpy-lAslFF5wHKuq1WNB1-6FugvXzA/exec";
   
   if (navigator.sendBeacon) {
     navigator.sendBeacon(URL_APPS_SCRIPT, JSON.stringify(payloadPreorden));
@@ -949,7 +951,6 @@ function enviarPedidoWhatsApp() {
     }).catch(err => console.error("Error al registrar preorden:", err));
   }
 
-  // 🟢 REGISTRO TAMBIÉN EN EL DASHBOARD DE EVENTOS (Opcional)
   const totalUnidades = carrito.reduce((acc, p) => acc + p.cantidad, 0);
   registrarEvento("pedido_whatsapp", "carrito_checkout", `${totalUnidades} prod | ID: ${idPedido} | Total: $${totalUSD.toFixed(2)}`);
 
@@ -958,14 +959,8 @@ function enviarPedidoWhatsApp() {
                   `🆔 *ID:* ${idPedido}\n` +
                   `👤 *Cliente:* ${nombre} ${clienteActual ? '⭐ [VIP]' : ''}\n` +
                   `📞 *TLF:* ${telefonoCliente}\n\n` +
-                  `📦 *Productos:*\n` + carrito.map(p => `• ${p.cantidad}x ${p.nombre} ($${p.precio.toFixed(2)})`).join("\n") + `\n\n`;
-
-  if (clienteActual && clienteActual.descuento > 0) {
-    mensajeWp += `🏷️ *Subtotal:* $${subtotal.toFixed(2)}\n`;
-    mensajeWp += `✨ *Descuento VIP (${clienteActual.descuento}%):* Aplicado\n`;
-  }
-
-  mensajeWp += `💰 *Total USD:* $${totalUSD.toFixed(2)}\n`;
+                  `📦 *Productos:* ${productosFormateados}\n\n` +
+                  `💰 *Total USD:* $${totalUSD.toFixed(2)}\n`;
   if (tasaBcvActual) {
     mensajeWp += `🇻🇪 *Total Bs:* Bs. ${totalBolivares.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
   }
@@ -973,7 +968,6 @@ function enviarPedidoWhatsApp() {
                `💳 *Método de Pago:* ${metodoPago}\n` +
                `📍 *Tipo / Dirección:* ${tipoPedido} - ${direccionCliente}`;
 
-  // 6. Abrir WhatsApp con el pedido redactado
   const telefonoTienda = CONFIG_PSTORE.numeroWhatsapp || "584126216661";
   window.open(`https://wa.me/${telefonoTienda}?text=${encodeURIComponent(mensajeWp)}`, "_blank");
 }
