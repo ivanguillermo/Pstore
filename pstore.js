@@ -16,10 +16,10 @@ const productosPorPagina = 20;
 // ==========================================
 // REGISTRO DE EVENTOS Y MÉTRICAS
 // ==========================================
-const URL_APPS_SCRIPT_EVENTOS = "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/exec"; 
+const URL_APPS_SCRIPT_EVENTOS = "https://script.google.com/macros/s/AKfycbzEgXQxewVbQSo_7CfL-G0mZCBiuMqM-XLaUGVYgpy-lAslFF5wHKuq1WNB1-6FugvXzA/exec"; 
 
 function registrarEvento(nombreEvento, detalle = "", extra = "") {
-  if (!URL_APPS_SCRIPT_EVENTOS || URL_APPS_SCRIPT_EVENTOS === "https://script.google.com/macros/s/AKfycbzCCOFnNPRXeWEpAOFtBpAkthyrBC5-2Erl_RTDdxHYxrXCDnQuube2oRsgQuCFRdnCcg/execAQUI_TU_URL_DE_APPS_SCRIPT") return;
+  if (!URL_APPS_SCRIPT_EVENTOS || URL_APPS_SCRIPT_EVENTOS === "https://script.google.com/macros/s/AKfycbzEgXQxewVbQSo_7CfL-G0mZCBiuMqM-XLaUGVYgpy-lAslFF5wHKuq1WNB1-6FugvXzA/exec") return;
   const ubicacion = document.getElementById("cliente-ciudad")?.value || "No especificada";
   const usuario = sessionStorage.getItem("user_email") || "Anónimo";
   
