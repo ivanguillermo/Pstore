@@ -209,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof CONFIG_PSTORE !== "undefined") {
     aplicarConfiguracion(CONFIG_PSTORE);
     sincronizarConGoogleSheets();
+    obtenerTasaBCV();
   }
   // --- RESTAURACIÓN: SELECTOR DE CUADRÍCULA / GRID ---
   const selectColumnas = document.getElementById("select-columnas");
