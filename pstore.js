@@ -78,18 +78,22 @@ function ordenarProductosParaCatalogo(todosLosProductos) {
 // --- OBTENCIÓN AUTOMÁTICA DE TASA BCV ---
 async function obtenerTasaBCV() {
   try {
-    const res = await fetch("https://pstore-bcv-api.vercel.app/api/bcv"); // o tu endpoint de preferencia
+    // 🌐 Aquí pegas la URL que te dio Google Apps Script al publicar el código de arriba
+    const res = await fetch("https://script.google.com/macros/s/AKfycbzEgXQxewVbQSo_7CfL-G0mZCBiuMqM-XLaUGVYgpy-lAslFF5wHKuq1WNB1-6FugvXzA/exec"); 
+    
     if (res.ok) {
       const data = await res.json();
-      if (data && data.tasa) {
-        tasaBcvActual = parseFloat(data.tasa);
+      
+      // data.tasaBcv viene directamente de lo que el script leyó de la celda B12
+      if (data && data.tasaBcv) {
+        tasaBcvActual = parseFloat(data.tasaBcv);
         actualizarIndicadorTasa();
         return;
       }
     }
-    throw new Error("Respuesta de API BCV inválida");
+    throw new Error("No se pudo leer la celda B12");
   } catch (e) {
-    console.warn("No se pudo obtener la tasa BCV en vivo, utilizando tasa de respaldo configurada:", CONFIG_PSTORE.tasaBcvRespaldo);
+    console.warn("Error con la tasa, usando respaldo de config.js:", CONFIG_PSTORE.tasaBcvRespaldo);
     tasaBcvActual = CONFIG_PSTORE.tasaBcvRespaldo || 0;
     actualizarIndicadorTasa();
   }
