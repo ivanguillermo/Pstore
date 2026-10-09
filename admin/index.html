@@ -236,14 +236,15 @@
           </form>
         </div>
       </div>
-
+      
       <!-- TAB 3: CARACTERÍSTICAS WEBSITE -->
       <div id="tab-website" class="tab-content">
-        <div class="card">
-          <h2 style="margin-top:0; color:#10b981;">🌐 Configuración y Características del Website</h2>
-          <p style="color:#94a3b8;">Datos cargados dinámicamente desde la hoja de configuración "website".</p>
-          <div id="websiteContentContainer" style="margin-top: 20px;">
-            <p style="color:#888;">Cargando datos de configuración web...</p>
+        <div class="card" style="max-width: 800px; margin: 0 auto;">
+          <h2 style="margin-top:0; color:#10b981;">🌐 Personalización y Variables de la Tienda</h2>
+          <p style="color:#94a3b8; font-size:13px; margin-bottom: 20px;">Modifica los valores directamente en la hoja "website".</p>
+          
+          <div id="websiteFormContainer" class="form-grid">
+            <p style="color:#888;">Cargando variables...</p>
           </div>
         </div>
       </div>
@@ -460,18 +461,52 @@
       llenarSelect('prodColeccion', cols.length ? cols : ['Sanrio', 'Disney', 'Anime', 'Minecraft']);
     }
 
-    function renderizarWebsiteConfig(webData) {
-      const container = document.getElementById('websiteContentContainer');
-      if(!webData || webData.length === 0) {
-        container.innerHTML = `<p style="color:#888;">No hay configuraciones web cargadas en la hoja.</p>`;
+    function renderizarWebsiteConfig(webConfigObj) {
+      const container = document.getElementById('websiteFormContainer');
+      if(!webConfigObj || Object.keys(webConfigObj).length === 0) {
+        container.innerHTML = `<p style="color:#888;">No hay configuraciones web encontradas.</p>`;
         return;
       }
-      let html = `<ul style="list-style:none; padding:0;">`;
-      webData.forEach(w => {
-        html += `<li style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:8px; border:1px solid #334155;"><strong>${w.clave || w.seccion || 'Elemento'}:</strong> ${w.valor || w.contenido || ''}</li>`;
-      });
-      html += `</ul>`;
+
+      let html = "";
+      for (const [key, value] of Object.entries(webConfigObj)) {
+        html += `
+          <div class="form-group">
+            <label>${key}:</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="config_${key}" value="${value}" style="flex:1;">
+              <button type="button" class="btn-action" onclick="guardarVariableWeb('${key}')">Guardar</button>
+            </div>
+          </div>
+        `;
+      }
       container.innerHTML = html;
+    }
+
+    async function guardarVariableWeb(clave) {
+      const inputVal = document.getElementById(`config_${clave}`).value;
+      const payload = {
+        action: "actualizar_config_web",
+        clave: clave,
+        valor: inputVal
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if(result.status === "success") {
+          alert(`✅ Variable "${clave}" actualizada correctamente.`);
+          cargarDatosGenerales();
+        } else {
+          alert("Error al actualizar la variable.");
+        }
+      } catch(err) {
+        console.error(err);
+        alert("Error de red al actualizar.");
+      }
     }
 
     async function enviarNuevoProducto(e) {
