@@ -228,6 +228,10 @@
                 <input type="text" id="prodTalla" placeholder="Ej: Única / S / M / L">
               </div>
               <div class="form-group">
+                <label>Descripcion:</label>
+                <input type="color" id="prodDescripcion" placeholder="Da una descripcion detallada del producto">
+              </div>
+              <div class="form-group">
                 <label>Imagen del Producto (Carga local / Drive):</label>
                 <input type="file" id="prodImagenFile" accept="image/*" required>
               </div>
@@ -525,6 +529,7 @@
           proveedor: document.getElementById('prodProveedor').value,
           coleccion: document.getElementById('prodColeccion').value,
           talla: document.getElementById('prodTalla').value,
+          descripcion: document.getElementById('prodDescripcion').value,
           imagenBase64: reader.result,
           imagenNombre: file.name
         };
