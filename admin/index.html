@@ -87,10 +87,11 @@
     <header class="navbar">
       <h1>🛍️ Pstore Dashboard PWA</h1>
       <div class="nav-tabs">
-        <button class="nav-tab active" onclick="switchTab('tab-stats', event)">📊 Estadísticas & Gráficos</button>
-        <button class="nav-tab" onclick="switchTab('tab-productos', event)">➕ Cargar Producto</button>
-        <button class="nav-tab" onclick="switchTab('tab-website', event)">🌐 Características Web</button>
-        <button class="nav-tab" onclick="switchTab('tab-push', event)">🔔 Notificaciones Push</button>
+        <button class="nav-tab active" onclick="switchTab('tab-stats', event)">Stats</button>
+        <button class="nav-tab" onclick="switchTab('tab-productos', event)">➕ Producto</button>
+        <button class="nav-tab" onclick="switchTab('tab-website', event)">Config Web</button>
+        <button class="nav-tab" onclick="switchTab('tab-push', event)">🔔 Push</button>
+        <button class="nav-tab" onclick="switchTab('tab-preordenes', event)">Preórdenes</button>
       </div>
       <div>
         <button class="btn-action" onclick="cargarDatosGenerales()">🔄 Actualizar</button>
@@ -270,13 +271,39 @@
           <button type="button" class="btn-submit" onclick="enviarPushNotificacion()">🚀 Enviar Notificación</button>
         </div>
       </div>
+      <!-- TAB 5: PREÓRDENES Y FACTURACIÓN -->
+      <div id="tab-preordenes" class="tab-content">
+        <div class="card">
+          <h2 style="margin-top:0; color:#38bdf8;">📦 Preórdenes Recibidas (Pendientes de Facturar)</h2>
+          <p style="color:#94a3b8; font-size:13px; margin-bottom: 20px;">Selecciona una preorden para cargarla automáticamente en el facturador y enviar el PDF.</p>
+          
+          <div class="table-container" style="margin: 0; background: #0f172a;">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID Orden</th>
+                  <th>Fecha / Hora</th>
+                  <th>Cliente</th>
+                  <th>Teléfono</th>
+                  <th>Método Pago</th>
+                  <th>Total USD</th>
+                  <th style="text-align: center;">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaPreordenes">
+                <tr><td colspan="7" style="text-align:center; color:#888;">Cargando preórdenes...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
     </div>
   </div>
 
   <script>
     const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","meirivero0412@gmail.com"];
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz82C28LUOf666d45bSQuOw3MiAQyVmWxMIPbxj5sty_hGtvNFQO0Ah2iJfi0HsV7NQjg/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqi3Wi-W_kLibCdlgEFVgQ_puvIG8W3Azw8ZTavK8ltkQrOf5gY_E6BHAhZNZEk7Tk3w/exec";
 
     google.charts.load('current', {'packages':['corechart']});
 
@@ -561,6 +588,67 @@
       alert(`🔔 Notificación Push enviada con éxito:\n\n${title}\n${body}`);
       document.getElementById('pushTitle').value = "";
       document.getElementById('pushBody').value = "";
+    }
+
+    // Función para renderizar las preórdenes en la tabla de la app
+    function renderizarPreordenes(preordenes) {
+      const tbody = document.getElementById('tablaPreordenes');
+      if (!preordenes || preordenes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">No hay preórdenes pendientes.</td></tr>`;
+        return;
+      }
+
+      let html = "";
+      preordenes.forEach(o => {
+        const idOrden = o.id_pedido || o.idpedido || o.codigo_orden || o[0] || "N/A";
+        const fecha = o.fecha_hora || o.fecha || o[1] || "N/A";
+        const cliente = o.nombre_cliente || o.nombrecliente || o[2] || "Cliente";
+        const tlf = o.tlf || o.telefono || o[4] || "N/A";
+        const pago = o.metodo_pago || o.metodopago || "Pago Móvil";
+        const total = o.total_usd || o.totalusd || o.subtotal || "0.00";
+
+        html += `
+          <tr>
+            <td><strong>${idOrden}</strong></td>
+            <td>${fecha}</td>
+            <td>${cliente}</td>
+            <td>${tlf}</td>
+            <td>${pago}</td>
+            <td style="color:#10b981; font-weight:bold;">$${parseFloat(total || 0).toFixed(2)}</td>
+            <td style="text-align: center;">
+              <button class="btn-action" onclick="facturarPreorden('${idOrden}')">⚡ Facturar y Enviar PDF</button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    // Disparar la facturación automatizada desde la app
+    async function facturarPreorden(idOrden) {
+      if(!confirm(`¿Deseas generar la factura y enviar el correo para la orden ${idOrden}?`)) return;
+
+      alert(`⚙️ Procesando orden ${idOrden} en el facturador. Por favor espera unos segundos...`);
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: "procesar_factura_preorden",
+            codigoOrden: idOrden
+          })
+        });
+        const result = await res.json();
+        if(result.status === "success") {
+          alert(`✅ ¡Factura generada y enviada con éxito para la orden ${idOrden}!`);
+          cargarDatosGenerales(); // Recargar datos
+        } else {
+          alert("❌ Error al procesar la factura: " + result.message);
+        }
+      } catch(err) {
+        console.error(err);
+        alert("Error de conexión al intentar facturar.");
+      }
     }
   </script>
 </body>
