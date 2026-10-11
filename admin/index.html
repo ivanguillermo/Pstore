@@ -612,6 +612,22 @@
       tbody.innerHTML = html;
     }
 
+
+    // Aplicar dinámicamente los estilos de la tienda al Admin
+    function aplicarEstilosDinamicosWebsite(websiteConfig) {
+      if (!websiteConfig) return;
+      
+      const root = document.documentElement;
+
+      // Recorremos las variables de la hoja website y las inyectamos como CSS variables si son de color o diseño
+      for (const [key, value] of Object.entries(websiteConfig)) {
+        // Si la clave empieza con '--' (ej. --bg-main, --brand-gold) la aplicamos directo al CSS
+        if (key.startsWith('--') && value) {
+          root.style.setProperty(key, value);
+        }
+      }
+    }
+
     // 👁️ VER DETALLES Y VALIDAR STOCK EN TIEMPO REAL
     function verDetallesOrden(ordenEncoded) {
       const o = JSON.parse(decodeURIComponent(ordenEncoded));
