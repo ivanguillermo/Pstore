@@ -10,42 +10,19 @@
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
  <style>
-    /* ==========================================
-       VARIABLES GLOBALES (IDÉNTICAS A PSTORE.CSS)
-       ========================================== */
-    :root {
-      --bg-primary: #0f172a;        /* Fondo principal oscuro de la PWA */
-      --bg-secondary: #1e293b;      /* Tarjetas y contenedores */
-      --bg-card: #1e293b;           
-      --bg-modal: #1e293b;          
-      
-      --text-primary: #f8fafc;      
-      --text-secondary: #94a3b8;    
-      
-      --brand-gold: #d4af37;        /* Dorado principal */
-      --brand-gold-hover: #b89428;  
-      --brand-black: #0f172a;       
-      
-      --accent-color: var(--brand-gold);
-      --border-color: #334155;      
-      --border-radius: 12px;
-      --transition-fast: 0.2s ease;
-      --shadow-main: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg-primary); margin: 0; padding: 0; color: var(--text-primary); overflow-x: hidden; }
+    body { background-color: #0f172a; margin: 0; padding: 0; color: #f8fafc; overflow-x: hidden; }
     
     /* LAYOUT PWA & MENU HAMBURGUESA */
     #dashboardContent { display: none; min-height: 100vh; display: flex; flex-direction: column; width: 100%; }
-    .navbar { background: var(--bg-secondary); padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); position: relative; width: 100%; }
-    .navbar h1 { margin: 0; font-size: 16px; color: var(--brand-gold); display: flex; align-items: center; gap: 8px; }
+    .navbar { background: #1e293b; padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; position: relative; width: 100%; }
+    .navbar h1 { margin: 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px; }
     
-    .hamburger { display: none; background: transparent; border: none; color: var(--brand-gold); font-size: 24px; cursor: pointer; }
+    .hamburger { display: none; background: transparent; border: none; color: #fff; font-size: 24px; cursor: pointer; }
     
-    .nav-tabs { display: flex; gap: 6px; background: var(--bg-primary); padding: 4px; border-radius: 10px; border: 1px solid var(--border-color); align-items: center; }
-    .nav-tab { background: transparent; border: none; color: var(--text-secondary); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; transition: all 0.2s; }
-    .nav-tab.active { background: var(--brand-gold); color: #000; font-weight: bold; }
+    .nav-tabs { display: flex; gap: 6px; background: #0f172a; padding: 4px; border-radius: 10px; border: 1px solid #334155; align-items: center; }
+    .nav-tab { background: transparent; border: none; color: #94a3b8; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; transition: all 0.2s; }
+    .nav-tab.active { background: #3b82f6; color: white; }
 
     .nav-actions { display: flex; gap: 8px; align-items: center; }
 
@@ -55,50 +32,48 @@
 
     /* TARJETAS Y GRID */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .card { background: var(--bg-card); border-radius: var(--border-radius); padding: 15px; border: 1px solid var(--border-color); width: 100%; overflow: hidden; box-shadow: var(--shadow-main); }
-    .card h3 { margin: 0 0 8px 0; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-    .card .value { font-size: 22px; font-weight: bold; color: var(--text-primary); }
+    .card { background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #334155; width: 100%; overflow: hidden; }
+    .card h3 { margin: 0 0 8px 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card .value { font-size: 22px; font-weight: bold; color: #f8fafc; }
     .card .value.green { color: #10b981; }
 
     .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.5rem; width: 100%; }
-    .chart-card { background: var(--bg-card); border-radius: var(--border-radius); padding: 15px; border: 1px solid var(--border-color); width: 100%; overflow: hidden; }
-    .chart-card h3 { margin-top: 0; font-size: 14px; color: var(--brand-gold); text-align: center; }
+    .chart-card { background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #334155; width: 100%; overflow: hidden; }
+    .chart-card h3 { margin-top: 0; font-size: 14px; color: #cbd5e1; text-align: center; }
     .chart-container { width: 100%; height: 260px; }
 
     /* TABLAS RESPONSIVAS */
-    .table-container { background: var(--bg-card); border-radius: var(--border-radius); padding: 10px; border: 1px solid var(--border-color); overflow-x: auto; margin-bottom: 1.5rem; width: 100%; -webkit-overflow-scrolling: touch; }
+    .table-container { background: #1e293b; border-radius: 12px; padding: 10px; border: 1px solid #334155; overflow-x: auto; margin-bottom: 1.5rem; width: 100%; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; text-align: left; min-width: 500px; }
-    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
-    th { background-color: var(--bg-primary); color: var(--brand-gold); font-weight: 600; }
-    tr:hover { background-color: rgba(212, 175, 55, 0.05); }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #334155; font-size: 13px; }
+    th { background-color: #0f172a; color: #94a3b8; font-weight: 600; }
+    tr:hover { background-color: #273548; }
 
     /* FORMULARIOS */
     .form-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; width: 100%; }
     .form-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-    .form-group label { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
-    .form-group input, .form-group select, .form-group textarea { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; color: var(--text-primary); font-size: 14px; width: 100%; max-width: 100%; }
-    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--brand-gold); }
+    .form-group label { font-size: 13px; color: #94a3b8; font-weight: 600; }
+    .form-group input, .form-group select, .form-group textarea { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; color: #fff; font-size: 14px; width: 100%; max-width: 100%; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #3b82f6; }
     
-    .btn-submit { background: var(--brand-gold); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 1rem; transition: background 0.2s; }
-    .btn-submit:hover { background: var(--brand-gold-hover); }
-    
+    .btn-submit { background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 1rem; transition: background 0.2s; }
     .btn-action { background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
-    .btn-warning { background: var(--brand-gold); color: #000; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .btn-warning { background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
     .btn-danger { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
 
     /* MODAL DETALLES */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 1rem; }
-    .modal-card { background: var(--bg-modal); border-radius: var(--border-radius); padding: 20px; width: 100%; max-width: 600px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
-    .modal-header h3 { margin: 0; color: var(--brand-gold); }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 1rem; }
+    .modal-card { background: #1e293b; border-radius: 12px; padding: 20px; width: 100%; max-width: 600px; border: 1px solid #334155; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px; }
+    .modal-header h3 { margin: 0; color: #38bdf8; }
 
     /* RESPONSIVE HAMBURGUESA */
     @media(max-width: 768px) {
       .hamburger { display: block; }
-      .nav-tabs { display: none; flex-direction: column; width: 100%; position: absolute; top: 100%; left: 0; background: var(--bg-secondary); padding: 10px; border-bottom: 1px solid var(--border-color); z-index: 99; box-shadow: 0 10px 15px rgba(0,0,0,0.3); }
+      .nav-tabs { display: none; flex-direction: column; width: 100%; position: absolute; top: 100%; left: 0; background: #1e293b; padding: 10px; border-bottom: 1px solid #334155; z-index: 99; box-shadow: 0 10px 15px rgba(0,0,0,0.3); }
       .nav-tabs.open { display: flex; }
       .nav-tab { width: 100%; text-align: left; padding: 10px; }
-      .nav-actions { display: none; }
+      .nav-actions { display: none; } /* Opcional en barra principal, o ajustado */
     }
 
     @media(min-width: 768px) {
@@ -112,8 +87,8 @@
   <!-- PANTALLA 1: LOGIN -->
   <div id="loginScreen" style="display:flex; justify-content:center; align-items:center; height:100vh;">
     <div class="card" style="max-width: 400px; text-align: center; padding: 30px;">
-      <h2 style="color: var(--brand-gold);">Pstore Admin</h2>
-      <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">Inicia sesión con tu cuenta de Google autorizada.</p>
+      <h2>Pstore Admin</h2>
+      <p style="color:#94a3b8; font-size:13px; margin-bottom:20px;">Inicia sesión con tu cuenta de Google autorizada.</p>
       <div id="g_id_onload"
            data-client_id="1051720410997-kc6qojr44e03ofm9r8ni0enng367sauh.apps.googleusercontent.com"
            data-callback="handleCredentialResponse">
@@ -204,14 +179,14 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
           <div class="table-container" style="margin:0;">
-            <h3 style="margin-top:0; color:var(--brand-gold);">🏆 Productos Líderes</h3>
+            <h3 style="margin-top:0; color:#d4af37;">🏆 Productos Líderes</h3>
             <table>
               <thead><tr><th>Producto</th><th style="text-align:center;">Likes</th><th style="text-align:center;">Shares</th></tr></thead>
               <tbody id="tabla-lideres"><tr><td colspan="3" style="text-align:center; color:#888;">Cargando...</td></tr></tbody>
             </table>
           </div>
           <div class="table-container" style="margin:0;">
-            <h3 style="margin-top:0; color:var(--brand-gold);">🔍 Términos Más Buscados</h3>
+            <h3 style="margin-top:0; color:#60a5fa;">🔍 Términos Más Buscados</h3>
             <ul id="lista-top-busquedas" style="list-style:none; padding:0; margin:0; font-size:14px;">
               <li style="color:#888;">Cargando...</li>
             </ul>
@@ -219,7 +194,7 @@
         </div>
 
         <div class="table-container">
-          <h3 style="margin-top:0; color:var(--brand-gold);">📋 Últimos Pedidos</h3>
+          <h3 style="margin-top:0;">📋 Últimos Pedidos</h3>
           <table>
             <thead>
               <tr><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Monto</th></tr>
@@ -234,7 +209,7 @@
       <!-- TAB 2: REGISTRAR PRODUCTO -->
       <div id="tab-productos" class="tab-content">
         <div class="card" style="max-width: 800px; margin: 0 auto;">
-          <h2 style="margin-top:0; color:var(--brand-gold);">➕ Registrar Nuevo Producto</h2>
+          <h2 style="margin-top:0; color:#3b82f6;">➕ Registrar Nuevo Producto</h2>
           <form id="formProducto" onsubmit="enviarNuevoProducto(event)">
             <div class="form-grid">
               <div class="form-group">
@@ -282,7 +257,7 @@
       <!-- TAB 3: WEBSITE CONFIG -->
       <div id="tab-website" class="tab-content">
         <div class="card" style="max-width: 800px; margin: 0 auto;">
-          <h2 style="margin-top:0; color:var(--brand-gold);">🌐 Variables de la Tienda</h2>
+          <h2 style="margin-top:0; color:#10b981;">🌐 Variables de la Tienda</h2>
           <div id="websiteFormContainer" class="form-grid">
             <p style="color:#888;">Cargando variables...</p>
           </div>
@@ -292,7 +267,7 @@
       <!-- TAB 4: PUSH -->
       <div id="tab-push" class="tab-content">
         <div class="card" style="max-width: 600px; margin: 0 auto;">
-          <h2 style="margin-top:0; color:var(--brand-gold);">🔔 Enviar Notificación Push</h2>
+          <h2 style="margin-top:0; color:#f59e0b;">🔔 Enviar Notificación Push</h2>
           <div class="form-group" style="margin-bottom: 15px;">
             <label>Título:</label>
             <input type="text" id="pushTitle" placeholder="Ej: ¡Ofertas activas!">
@@ -308,8 +283,8 @@
       <!-- TAB 5: PREÓRDENES -->
       <div id="tab-preordenes" class="tab-content">
         <div class="card">
-          <h2 style="margin-top:0; color:var(--brand-gold);">📦 Preórdenes Recibidas</h2>
-          <div class="table-container" style="margin: 0;">
+          <h2 style="margin-top:0; color:#38bdf8;">📦 Preórdenes Recibidas</h2>
+          <div class="table-container" style="margin: 0; background: #0f172a;">
             <table>
               <thead>
                 <tr>
@@ -349,10 +324,10 @@
   </div>
 
   <script>
-    const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","meirivero0412@gmail.com","paulaherro.05@gmail.com","latiendadepaula@gmail.com"];
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfr4TE2rniJ8XaTc-zPC0lrXs8DyfUXTE6bohQYHiuA5gJ4jU1KQkO00pT69BO0b8T/exec";
+    const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","meirivero0412@gmail.com","paulaherro.05@gmail.com"];
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5cJojzGoI_GLbDewb9GukMIfcZ0jHm1fIHzg7FQkkrvcFS0OGjDJXPsR-Kd3ap9xkLA/exec";
 
-    let cacheGlobalData = null;
+    let cacheGlobalData = null; // Para guardar productos y stock en memoria para el modal
 
     google.charts.load('current', {'packages':['corechart']});
 
@@ -395,7 +370,7 @@
       document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       event.currentTarget.classList.add('active');
-      document.getElementById('navTabsContainer').classList.remove('open');
+      document.getElementById('navTabsContainer').classList.remove('open'); // Cerrar menú en móvil
     }
 
     window.onload = function() {
@@ -407,35 +382,17 @@
 
     async function cargarDatosGenerales() {
       try {
-        // Redirección explicita para solucionar bloqueos de Google Apps Script
-        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`, {
-          method: "GET",
-          redirect: "follow"
-        });
+        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
         const data = await res.json();
-        cacheGlobalData = data; 
+        cacheGlobalData = data; // Guardamos en caché para el stock
         
-        // 🎨 Sincronización automática de variables y colores con la hoja website
-        if (data.website) aplicarConfiguracionWebsite(data.website);
-
         renderizarVentas(data.ventas || []);
-        procesarAnaliticaYGraficos(data.productos || [], data.eventos || [], data.ventas || []);
-        poblarSelectsFormulario(data.productos || []);
+        procesarAnaliticaYGraficos(data.productos || data.catalogo || [], data.eventos || [], data.ventas || []);
+        poblarSelectsFormulario(data.config || data.productos || []);
         renderizarWebsiteConfig(data.website || {});
         renderizarPreordenes(data.preordenes || []);
       } catch (err) {
         console.error("Error al sincronizar con el servidor:", err);
-      }
-    }
-
-    // 🎨 Inyección dinámica de colores desde Google Sheets (:root)
-    function aplicarConfiguracionWebsite(websiteConfig) {
-      if (!websiteConfig) return;
-      const root = document.documentElement;
-      for (const [key, value] of Object.entries(websiteConfig)) {
-        if (key && key.startsWith('--') && value) {
-          root.style.setProperty(key, String(value).replace(/^['"]|['"]$/g, "").trim());
-        }
       }
     }
 
@@ -447,13 +404,13 @@
         return;
       }
       [...ventas].reverse().forEach(v => {
-        let monto = parseFloat(v.total || v.monto || v.total_usd || 0);
+        let monto = parseFloat(v.total || v.monto || 0);
         totalMonto += monto;
-        html += `<tr><td>${v.fecha || v.marca_temporal || 'N/A'}</td><td><strong>${v.cliente || v.nombre || v.nombre_cliente || 'Cliente'}</strong></td><td>${v.productos || v.detalle || ''}</td><td><strong>$${monto.toFixed(2)}</strong></td></tr>`;
+        html += `<tr><td>${v.fecha || v.marca_temporal || 'N/A'}</td><td><strong>${v.cliente || v.nombre || 'Cliente'}</strong></td><td>${v.productos || v.detalle || ''}</td><td><strong>$${monto.toFixed(2)}</strong></td></tr>`;
       });
       document.getElementById('totalMonto').innerText = `$${totalMonto.toFixed(2)}`;
       document.getElementById('totalPedidos').innerText = totalPedidos;
-      document.getElementById('ticketPromedio').innerText = `$${(totalPedidos > 0 ? (totalMonto / totalPedidos) : 0).toFixed(2)}`;
+      document.getElementById('ticketPromedio').innerText = `$${(totalMonto / totalPedidos).toFixed(2)}`;
       document.getElementById('tablaCuerpo').innerHTML = html;
     }
 
@@ -461,44 +418,40 @@
       let busquedas = 0, likes = 0, shares = 0;
       let conteoCat = {}, conteoUser = {}, conteoProv = {}, conteoEstado = {}, conteoCol = {}, conteoCli = {}, conteoBusquedas = {}, conteoProds = {};
 
-      if (Array.isArray(eventos)) {
-        eventos.forEach(ev => {
-          let tipo = ev.evento || ev[2];
-          let detalle = ev.detalle || ev[3];
-          let extra = ev.extra || ev[4];
-          let ciudad = ev.ubicacion || ev[5] || "General";
-          conteoCli[ciudad] = (conteoCli[ciudad] || 0) + 1;
+      eventos.forEach(ev => {
+        let tipo = ev.evento || ev[2];
+        let detalle = ev.detalle || ev[3];
+        let extra = ev.extra || ev[4];
+        let ciudad = ev.ubicacion || ev[5] || "General";
+        conteoCli[ciudad] = (conteoCli[ciudad] || 0) + 1;
 
-          if (tipo === "busqueda_producto" && detalle) {
-            busquedas++;
-            let term = String(detalle).toLowerCase().trim();
-            conteoBusquedas[term] = (conteoBusquedas[term] || 0) + 1;
-          } else if (tipo === "producto_favorito") {
-            likes++;
-            let p = extra || detalle || "Prod";
-            if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
-            conteoProds[p].likes++;
-          } else if (tipo === "producto_compartido") {
-            shares++;
-            let p = extra || detalle || "Prod";
-            if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
-            conteoProds[p].shares++;
-          }
-        });
-      }
+        if (tipo === "busqueda_producto" && detalle) {
+          busquedas++;
+          let term = String(detalle).toLowerCase().trim();
+          conteoBusquedas[term] = (conteoBusquedas[term] || 0) + 1;
+        } else if (tipo === "producto_favorito") {
+          likes++;
+          let p = extra || detalle || "Prod";
+          if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
+          conteoProds[p].likes++;
+        } else if (tipo === "producto_compartido") {
+          shares++;
+          let p = extra || detalle || "Prod";
+          if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
+          conteoProds[p].shares++;
+        }
+      });
 
-      if (Array.isArray(productos)) {
-        productos.forEach(p => {
-          if(p.categoria) conteoCat[p.categoria] = (conteoCat[p.categoria] || 0) + 1;
-          if(p.subcategoria) conteoUser[p.subcategoria] = (conteoUser[p.subcategoria] || 0) + 1;
-          if(p.proveedor) conteoProv[p.proveedor] = (conteoProv[p.proveedor] || 0) + 1;
-          if(p.estado) conteoEstado[p.estado] = (conteoEstado[p.estado] || 0) + 1;
-          if(p.categoria_sec || p.coleccion) {
-            let col = p.categoria_sec || p.coleccion;
-            conteoCol[col] = (conteoCol[col] || 0) + 1;
-          }
-        });
-      }
+      productos.forEach(p => {
+        if(p.categoria) conteoCat[p.categoria] = (conteoCat[p.categoria] || 0) + 1;
+        if(p.subcategoria) conteoUser[p.subcategoria] = (conteoUser[p.subcategoria] || 0) + 1;
+        if(p.proveedor) conteoProv[p.proveedor] = (conteoProv[p.proveedor] || 0) + 1;
+        if(p.estado) conteoEstado[p.estado] = (conteoEstado[p.estado] || 0) + 1;
+        if(p.categoria_sec || p.coleccion) {
+          let col = p.categoria_sec || p.coleccion;
+          conteoCol[col] = (conteoCol[col] || 0) + 1;
+        }
+      });
 
       document.getElementById("stat-busquedas").textContent = busquedas;
       document.getElementById("stat-likes").textContent = likes;
@@ -506,34 +459,22 @@
 
       let tbodyLideres = document.getElementById("tabla-lideres");
       tbodyLideres.innerHTML = "";
-      let arrProds = Object.entries(conteoProds).sort((a,b)=>(b[1].likes+b[1].shares)-(a[1].likes+a[1].shares)).slice(0,5);
-      if (arrProds.length === 0) {
-        tbodyLideres.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Sin interacciones registradas</td></tr>`;
-      } else {
-        arrProds.forEach(([prod, st]) => {
-          tbodyLideres.innerHTML += `<tr><td>${prod}</td><td style="text-align:center; color:#f43f5e; font-weight:bold;">${st.likes}</td><td style="text-align:center; color:#10b981; font-weight:bold;">${st.shares}</td></tr>`;
-        });
-      }
+      Object.entries(conteoProds).sort((a,b)=>(b[1].likes+b[1].shares)-(a[1].likes+a[1].shares)).slice(0,5).forEach(([prod, st]) => {
+        tbodyLideres.innerHTML += `<tr><td>${prod}</td><td style="text-align:center; color:#f43f5e; font-weight:bold;">${st.likes}</td><td style="text-align:center; color:#10b981; font-weight:bold;">${st.shares}</td></tr>`;
+      });
 
       let listBusq = document.getElementById("lista-top-busquedas");
       listBusq.innerHTML = "";
-      let arrBusq = Object.entries(conteoBusquedas).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      if (arrBusq.length === 0) {
-        listBusq.innerHTML = `<li style="color:#888; text-align:center;">Sin búsquedas recientes</li>`;
-      } else {
-        arrBusq.forEach(([term, cnt]) => {
-          listBusq.innerHTML += `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color);"><span>🔍 "${term}"</span><strong style="color:var(--brand-gold);">${cnt}</strong></li>`;
-        });
-      }
+      Object.entries(conteoBusquedas).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([term, cnt]) => {
+        listBusq.innerHTML += `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;"><span>🔍 "${term}"</span><strong style="color:#60a5fa;">${cnt}</strong></li>`;
+      });
 
       google.charts.setOnLoadCallback(() => {
         const drawDonut = (elementId, dataObj) => {
-          let target = document.getElementById(elementId);
-          if (!target) return;
           let arr = Object.entries(dataObj);
           if(arr.length === 0) arr = [['Sin datos', 1]];
           let data = google.visualization.arrayToDataTable([['Clave', 'Val'], ...arr]);
-          new google.visualization.PieChart(target).draw(data, {
+          new google.visualization.PieChart(document.getElementById(elementId)).draw(data, {
             pieHole: 0.4, backgroundColor: 'transparent', 
             chartArea: {width: '90%', height: '80%'},
             legend: {position: 'right', textStyle: {color: '#cbd5e1'}}
@@ -549,15 +490,13 @@
     }
 
     function poblarSelectsFormulario(configData) {
-      if (!Array.isArray(configData)) return;
       const cats = [...new Set(configData.map(x => x.categoria).filter(Boolean))];
       const subs = [...new Set(configData.map(x => x.subcategoria).filter(Boolean))];
       const provs = [...new Set(configData.map(x => x.proveedor).filter(Boolean))];
       const cols = [...new Set(configData.map(x => x.categoria_sec || x.coleccion).filter(Boolean))];
 
       const llenarSelect = (id, arr) => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = `<option value="">Seleccione...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
+        document.getElementById(id).innerHTML = `<option value="">Seleccione...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
       };
       llenarSelect('prodCategoria', cats);
       llenarSelect('prodSubcategoria', subs);
@@ -595,12 +534,8 @@
           body: JSON.stringify({ action: "actualizar_config_web", clave: clave, valor: inputVal })
         });
         const result = await res.json();
-        if(result.status === "success") {
-          alert(`✅ Variable "${clave}" actualizada.`);
-          cargarDatosGenerales();
-        } else {
-          alert("Error al actualizar.");
-        }
+        if(result.status === "success") alert(`✅ Variable "${clave}" actualizada.`);
+        else alert("Error al actualizar.");
       } catch(err) { console.error(err); }
     }
 
@@ -657,6 +592,7 @@
 
         if (String(idOrden).toLowerCase().includes("id")) return;
 
+        // Guardamos el objeto completo como string JSON seguro para pasarlo al modal
         const ordenJson = encodeURIComponent(JSON.stringify(o));
 
         html += `
@@ -676,13 +612,14 @@
       tbody.innerHTML = html;
     }
 
+    // 👁️ VER DETALLES Y VALIDAR STOCK EN TIEMPO REAL
     function verDetallesOrden(ordenEncoded) {
       const o = JSON.parse(decodeURIComponent(ordenEncoded));
       const idOrden = o.id_pedido || o.idpedido || o.codigo_orden || o[0];
       const cliente = o.nombre_cliente || o.nombrecliente || o.cliente || o[2];
       const correo = o.correo || o[3];
       const tlf = o.tlf || o.telefono || o[4];
-      const productosTexto = o.productos || o[5] || "";
+      const productosTexto = o.productos || o[5] || ""; // Ej: "Correa Minimalista, 2, Anillo, 1"
       const metodoPago = o.metodo_pago || o.metodopago || o[9];
       const tipoPedido = o.tipo_pedido || o[7];
       const direccion = o.direccion || o[8];
@@ -695,7 +632,7 @@
         <p><strong>Teléfono:</strong> ${tlf}</p>
         <p><strong>Tipo / Método:</strong> ${tipoPedido} | ${metodoPago}</p>
         <p><strong>Dirección:</strong> ${direccion || 'Retiro en tienda / N/A'}</p>
-        <h4 style="margin: 15px 0 8px 0; color:var(--brand-gold);">📦 Validación de Productos y Stock:</h4>
+        <h4 style="margin: 15px 0 8px 0; color:#38bdf8;">📦 Validación de Productos y Stock:</h4>
         <div class="table-container">
           <table>
             <thead>
@@ -704,7 +641,9 @@
             <tbody>
       `;
 
-      let partes = String(productosTexto).split(",");
+      // Parsear los productos que vienen en formato plano o CSV desde la preorden
+      // Supongamos formato: "NombreProd, Cantidad, ..."
+      let partes = productosTexto.split(",");
       let listaItems = [];
       for (let i = 0; i < partes.length; i += 2) {
         let nombreProd = partes[i] ? partes[i].trim() : "";
@@ -716,15 +655,17 @@
         html += `<tr><td colspan="4" style="text-align:center; color:#888;">${productosTexto || 'Sin detalle estructurado'}</td></tr>`;
       } else {
         listaItems.forEach(item => {
+          // Buscar el producto en el catálogo global para ver su stock real
           let stockReal = 0;
           if(cacheGlobalData && cacheGlobalData.productos) {
             let prodEncontrado = cacheGlobalData.productos.find(p => 
               String(p.nombre || p[1]).toLowerCase().includes(item.nombre.toLowerCase())
             );
             if(prodEncontrado) {
+              // Ajusta según el nombre de la columna de stock en tu hoja (ej. stock, cantidad, etc.)
               stockReal = parseInt(prodEncontrado.stock || prodEncontrado.cantidad || prodEncontrado[13] || 10) || 10;
             } else {
-              stockReal = 5;
+              stockReal = 5; // Stock por defecto si no lo encuentra exacto
             }
           }
 
