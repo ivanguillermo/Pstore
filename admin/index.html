@@ -384,8 +384,11 @@
       try {
         const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
         const data = await res.json();
-        cacheGlobalData = data; // Guardamos en caché para el stock
+        cacheGlobalData = data; 
         
+        // 🎨 Aplicar los colores y variables de la tienda sincronizados con el Sheet
+        aplicarEstilosDinamicosWebsite(data.website);
+
         renderizarVentas(data.ventas || []);
         procesarAnaliticaYGraficos(data.productos || data.catalogo || [], data.eventos || [], data.ventas || []);
         poblarSelectsFormulario(data.config || data.productos || []);
