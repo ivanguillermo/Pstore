@@ -407,16 +407,20 @@
 
     async function cargarDatosGenerales() {
       try {
-        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
+        // Redirección explicita para solucionar bloqueos de Google Apps Script
+        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`, {
+          method: "GET",
+          redirect: "follow"
+        });
         const data = await res.json();
         cacheGlobalData = data; 
         
         // 🎨 Sincronización automática de variables y colores con la hoja website
-        aplicarConfiguracionWebsite(data.website);
+        if (data.website) aplicarConfiguracionWebsite(data.website);
 
         renderizarVentas(data.ventas || []);
-        procesarAnaliticaYGraficos(data.productos || data.catalogo || [], data.eventos || [], data.ventas || []);
-        poblarSelectsFormulario(data.config || data.productos || []);
+        procesarAnaliticaYGraficos(data.productos || [], data.eventos || [], data.ventas || []);
+        poblarSelectsFormulario(data.productos || []);
         renderizarWebsiteConfig(data.website || {});
         renderizarPreordenes(data.preordenes || []);
       } catch (err) {
@@ -429,8 +433,8 @@
       if (!websiteConfig) return;
       const root = document.documentElement;
       for (const [key, value] of Object.entries(websiteConfig)) {
-        if (key.startsWith('--') && value) {
-          root.style.setProperty(key, value.replace(/^['"]|['"]$/g, "").trim());
+        if (key && key.startsWith('--') && value) {
+          root.style.setProperty(key, String(value).replace(/^['"]|['"]$/g, "").trim());
         }
       }
     }
@@ -443,13 +447,13 @@
         return;
       }
       [...ventas].reverse().forEach(v => {
-        let monto = parseFloat(v.total || v.monto || 0);
+        let monto = parseFloat(v.total || v.monto || v.total_usd || 0);
         totalMonto += monto;
-        html += `<tr><td>${v.fecha || v.marca_temporal || 'N/A'}</td><td><strong>${v.cliente || v.nombre || 'Cliente'}</strong></td><td>${v.productos || v.detalle || ''}</td><td><strong>$${monto.toFixed(2)}</strong></td></tr>`;
+        html += `<tr><td>${v.fecha || v.marca_temporal || 'N/A'}</td><td><strong>${v.cliente || v.nombre || v.nombre_cliente || 'Cliente'}</strong></td><td>${v.productos || v.detalle || ''}</td><td><strong>$${monto.toFixed(2)}</strong></td></tr>`;
       });
       document.getElementById('totalMonto').innerText = `$${totalMonto.toFixed(2)}`;
       document.getElementById('totalPedidos').innerText = totalPedidos;
-      document.getElementById('ticketPromedio').innerText = `$${(totalMonto / totalPedidos).toFixed(2)}`;
+      document.getElementById('ticketPromedio').innerText = `$${(totalPedidos > 0 ? (totalMonto / totalPedidos) : 0).toFixed(2)}`;
       document.getElementById('tablaCuerpo').innerHTML = html;
     }
 
@@ -457,40 +461,44 @@
       let busquedas = 0, likes = 0, shares = 0;
       let conteoCat = {}, conteoUser = {}, conteoProv = {}, conteoEstado = {}, conteoCol = {}, conteoCli = {}, conteoBusquedas = {}, conteoProds = {};
 
-      eventos.forEach(ev => {
-        let tipo = ev.evento || ev[2];
-        let detalle = ev.detalle || ev[3];
-        let extra = ev.extra || ev[4];
-        let ciudad = ev.ubicacion || ev[5] || "General";
-        conteoCli[ciudad] = (conteoCli[ciudad] || 0) + 1;
+      if (Array.isArray(eventos)) {
+        eventos.forEach(ev => {
+          let tipo = ev.evento || ev[2];
+          let detalle = ev.detalle || ev[3];
+          let extra = ev.extra || ev[4];
+          let ciudad = ev.ubicacion || ev[5] || "General";
+          conteoCli[ciudad] = (conteoCli[ciudad] || 0) + 1;
 
-        if (tipo === "busqueda_producto" && detalle) {
-          busquedas++;
-          let term = String(detalle).toLowerCase().trim();
-          conteoBusquedas[term] = (conteoBusquedas[term] || 0) + 1;
-        } else if (tipo === "producto_favorito") {
-          likes++;
-          let p = extra || detalle || "Prod";
-          if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
-          conteoProds[p].likes++;
-        } else if (tipo === "producto_compartido") {
-          shares++;
-          let p = extra || detalle || "Prod";
-          if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
-          conteoProds[p].shares++;
-        }
-      });
+          if (tipo === "busqueda_producto" && detalle) {
+            busquedas++;
+            let term = String(detalle).toLowerCase().trim();
+            conteoBusquedas[term] = (conteoBusquedas[term] || 0) + 1;
+          } else if (tipo === "producto_favorito") {
+            likes++;
+            let p = extra || detalle || "Prod";
+            if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
+            conteoProds[p].likes++;
+          } else if (tipo === "producto_compartido") {
+            shares++;
+            let p = extra || detalle || "Prod";
+            if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
+            conteoProds[p].shares++;
+          }
+        });
+      }
 
-      productos.forEach(p => {
-        if(p.categoria) conteoCat[p.categoria] = (conteoCat[p.categoria] || 0) + 1;
-        if(p.subcategoria) conteoUser[p.subcategoria] = (conteoUser[p.subcategoria] || 0) + 1;
-        if(p.proveedor) conteoProv[p.proveedor] = (conteoProv[p.proveedor] || 0) + 1;
-        if(p.estado) conteoEstado[p.estado] = (conteoEstado[p.estado] || 0) + 1;
-        if(p.categoria_sec || p.coleccion) {
-          let col = p.categoria_sec || p.coleccion;
-          conteoCol[col] = (conteoCol[col] || 0) + 1;
-        }
-      });
+      if (Array.isArray(productos)) {
+        productos.forEach(p => {
+          if(p.categoria) conteoCat[p.categoria] = (conteoCat[p.categoria] || 0) + 1;
+          if(p.subcategoria) conteoUser[p.subcategoria] = (conteoUser[p.subcategoria] || 0) + 1;
+          if(p.proveedor) conteoProv[p.proveedor] = (conteoProv[p.proveedor] || 0) + 1;
+          if(p.estado) conteoEstado[p.estado] = (conteoEstado[p.estado] || 0) + 1;
+          if(p.categoria_sec || p.coleccion) {
+            let col = p.categoria_sec || p.coleccion;
+            conteoCol[col] = (conteoCol[col] || 0) + 1;
+          }
+        });
+      }
 
       document.getElementById("stat-busquedas").textContent = busquedas;
       document.getElementById("stat-likes").textContent = likes;
@@ -498,22 +506,34 @@
 
       let tbodyLideres = document.getElementById("tabla-lideres");
       tbodyLideres.innerHTML = "";
-      Object.entries(conteoProds).sort((a,b)=>(b[1].likes+b[1].shares)-(a[1].likes+a[1].shares)).slice(0,5).forEach(([prod, st]) => {
-        tbodyLideres.innerHTML += `<tr><td>${prod}</td><td style="text-align:center; color:#f43f5e; font-weight:bold;">${st.likes}</td><td style="text-align:center; color:#10b981; font-weight:bold;">${st.shares}</td></tr>`;
-      });
+      let arrProds = Object.entries(conteoProds).sort((a,b)=>(b[1].likes+b[1].shares)-(a[1].likes+a[1].shares)).slice(0,5);
+      if (arrProds.length === 0) {
+        tbodyLideres.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Sin interacciones registradas</td></tr>`;
+      } else {
+        arrProds.forEach(([prod, st]) => {
+          tbodyLideres.innerHTML += `<tr><td>${prod}</td><td style="text-align:center; color:#f43f5e; font-weight:bold;">${st.likes}</td><td style="text-align:center; color:#10b981; font-weight:bold;">${st.shares}</td></tr>`;
+        });
+      }
 
       let listBusq = document.getElementById("lista-top-busquedas");
       listBusq.innerHTML = "";
-      Object.entries(conteoBusquedas).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([term, cnt]) => {
-        listBusq.innerHTML += `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color);"><span>🔍 "${term}"</span><strong style="color:var(--brand-gold);">${cnt}</strong></li>`;
-      });
+      let arrBusq = Object.entries(conteoBusquedas).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      if (arrBusq.length === 0) {
+        listBusq.innerHTML = `<li style="color:#888; text-align:center;">Sin búsquedas recientes</li>`;
+      } else {
+        arrBusq.forEach(([term, cnt]) => {
+          listBusq.innerHTML += `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color);"><span>🔍 "${term}"</span><strong style="color:var(--brand-gold);">${cnt}</strong></li>`;
+        });
+      }
 
       google.charts.setOnLoadCallback(() => {
         const drawDonut = (elementId, dataObj) => {
+          let target = document.getElementById(elementId);
+          if (!target) return;
           let arr = Object.entries(dataObj);
           if(arr.length === 0) arr = [['Sin datos', 1]];
           let data = google.visualization.arrayToDataTable([['Clave', 'Val'], ...arr]);
-          new google.visualization.PieChart(document.getElementById(elementId)).draw(data, {
+          new google.visualization.PieChart(target).draw(data, {
             pieHole: 0.4, backgroundColor: 'transparent', 
             chartArea: {width: '90%', height: '80%'},
             legend: {position: 'right', textStyle: {color: '#cbd5e1'}}
@@ -529,13 +549,15 @@
     }
 
     function poblarSelectsFormulario(configData) {
+      if (!Array.isArray(configData)) return;
       const cats = [...new Set(configData.map(x => x.categoria).filter(Boolean))];
       const subs = [...new Set(configData.map(x => x.subcategoria).filter(Boolean))];
       const provs = [...new Set(configData.map(x => x.proveedor).filter(Boolean))];
       const cols = [...new Set(configData.map(x => x.categoria_sec || x.coleccion).filter(Boolean))];
 
       const llenarSelect = (id, arr) => {
-        document.getElementById(id).innerHTML = `<option value="">Seleccione...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<option value="">Seleccione...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
       };
       llenarSelect('prodCategoria', cats);
       llenarSelect('prodSubcategoria', subs);
@@ -682,7 +704,7 @@
             <tbody>
       `;
 
-      let partes = productosTexto.split(",");
+      let partes = String(productosTexto).split(",");
       let listaItems = [];
       for (let i = 0; i < partes.length; i += 2) {
         let nombreProd = partes[i] ? partes[i].trim() : "";
