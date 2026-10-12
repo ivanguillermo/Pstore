@@ -770,7 +770,7 @@ function configurarEventosModal() {
 
   document.getElementById("btn-consultar-whatsapp")?.addEventListener("click", () => {
     if (!productoActualModal) return;
-    const telefono = CONFIG_PSTORE.numeroWhatsapp || "584126216661";
+    const telefono = CONFIG_PSTORE.numeroWhatsapp || "584125043754";
     const urlProducto = `${window.location.origin}${window.location.pathname}#${productoActualModal.id}`;
     let mensaje = `👋 ¡Hola Pstore! Quisiera consultar sobre este producto:\n\n📌 *${productoActualModal.nombre}*\n💰 *Precio:* $${parseFloat(productoActualModal.precio).toFixed(2)}\n🔗 *Link:* ${urlProducto}`;
     window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank");
@@ -973,7 +973,7 @@ function enviarPedidoWhatsApp() {
                `💳 *Método de Pago:* ${metodoPago}\n` +
                `📍 *Tipo / Dirección:* ${tipoPedido} - ${direccionCliente}`;
 
-  const telefonoTienda = CONFIG_PSTORE.numeroWhatsapp || "584126216661";
+  const telefonoTienda = CONFIG_PSTORE.numeroWhatsapp || "584125043754";
   window.open(`https://wa.me/${telefonoTienda}?text=${encodeURIComponent(mensajeWp)}`, "_blank");
 }
 // ==========================================
