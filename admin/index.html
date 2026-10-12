@@ -324,10 +324,10 @@
   </div>
 
   <script>
-    const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","paulaherro.05@gmail.com"];
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5cJojzGoI_GLbDewb9GukMIfcZ0jHm1fIHzg7FQkkrvcFS0OGjDJXPsR-Kd3ap9xkLA/exec";
+    const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","meirivero0412@gmail.com","paulaherro.05@gmail.com","latiendadepaula@gmail.com"];
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfr4TE2rniJ8XaTc-zPC0lrXs8DyfUXTE6bohQYHiuA5gJ4jU1KQkO00pT69BO0b8T/exec";
 
-    let cacheGlobalData = null; // Para guardar productos y stock en memoria para el modal
+    let cacheGlobalData = null;
 
     google.charts.load('current', {'packages':['corechart']});
 
@@ -370,7 +370,7 @@
       document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       event.currentTarget.classList.add('active');
-      document.getElementById('navTabsContainer').classList.remove('open'); // Cerrar menú en móvil
+      document.getElementById('navTabsContainer').classList.remove('open');
     }
 
     window.onload = function() {
@@ -382,17 +382,32 @@
 
     async function cargarDatosGenerales() {
       try {
-        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
+        const res = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`, {
+          method: "GET",
+          redirect: "follow"
+        });
         const data = await res.json();
-        cacheGlobalData = data; // Guardamos en caché para el stock
+        cacheGlobalData = data; 
         
+        if (data.website) aplicarConfiguracionWebsite(data.website);
+
         renderizarVentas(data.ventas || []);
-        procesarAnaliticaYGraficos(data.productos || data.catalogo || [], data.eventos || [], data.ventas || []);
-        poblarSelectsFormulario(data.config || data.productos || []);
+        procesarAnaliticaYGraficos(data.productos || [], data.eventos || [], data.ventas || []);
+        poblarSelectsFormulario(data.productos || []);
         renderizarWebsiteConfig(data.website || {});
         renderizarPreordenes(data.preordenes || []);
       } catch (err) {
         console.error("Error al sincronizar con el servidor:", err);
+      }
+    }
+
+    function aplicarConfiguracionWebsite(websiteConfig) {
+      if (!websiteConfig) return;
+      const root = document.documentElement;
+      for (const [key, value] of Object.entries(websiteConfig)) {
+        if (key && key.startsWith('--') && value) {
+          root.style.setProperty(key, String(value).replace(/^['"]|['"]$/g, "").trim());
+        }
       }
     }
 
@@ -404,13 +419,13 @@
         return;
       }
       [...ventas].reverse().forEach(v => {
-        let monto = parseFloat(v.total || v.monto || 0);
+        let monto = parseFloat(v.total || v.monto || v.total_usd || 0);
         totalMonto += monto;
-        html += `<tr><td>${v.fecha || v.marca_temporal || 'N/A'}</td><td><strong>${v.cliente || v.nombre || 'Cliente'}</strong></td><td>${v.productos || v.detalle || ''}</td><td><strong>$${monto.toFixed(2)}</strong></td></tr>`;
+        html += `<tr><td>${v.fecha || v.marca_temporal || 'N/A'}</td><td><strong>${v.cliente || v.nombre || v.nombre_cliente || 'Cliente'}</strong></td><td>${v.productos || v.detalle || ''}</td><td><strong>$${monto.toFixed(2)}</strong></td></tr>`;
       });
       document.getElementById('totalMonto').innerText = `$${totalMonto.toFixed(2)}`;
       document.getElementById('totalPedidos').innerText = totalPedidos;
-      document.getElementById('ticketPromedio').innerText = `$${(totalMonto / totalPedidos).toFixed(2)}`;
+      document.getElementById('ticketPromedio').innerText = `$${(totalPedidos > 0 ? (totalMonto / totalPedidos) : 0).toFixed(2)}`;
       document.getElementById('tablaCuerpo').innerHTML = html;
     }
 
@@ -418,40 +433,44 @@
       let busquedas = 0, likes = 0, shares = 0;
       let conteoCat = {}, conteoUser = {}, conteoProv = {}, conteoEstado = {}, conteoCol = {}, conteoCli = {}, conteoBusquedas = {}, conteoProds = {};
 
-      eventos.forEach(ev => {
-        let tipo = ev.evento || ev[2];
-        let detalle = ev.detalle || ev[3];
-        let extra = ev.extra || ev[4];
-        let ciudad = ev.ubicacion || ev[5] || "General";
-        conteoCli[ciudad] = (conteoCli[ciudad] || 0) + 1;
+      if (Array.isArray(eventos)) {
+        eventos.forEach(ev => {
+          let tipo = ev.evento || ev[2];
+          let detalle = ev.detalle || ev[3];
+          let extra = ev.extra || ev[4];
+          let ciudad = ev.ubicacion || ev[5] || "General";
+          conteoCli[ciudad] = (conteoCli[ciudad] || 0) + 1;
 
-        if (tipo === "busqueda_producto" && detalle) {
-          busquedas++;
-          let term = String(detalle).toLowerCase().trim();
-          conteoBusquedas[term] = (conteoBusquedas[term] || 0) + 1;
-        } else if (tipo === "producto_favorito") {
-          likes++;
-          let p = extra || detalle || "Prod";
-          if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
-          conteoProds[p].likes++;
-        } else if (tipo === "producto_compartido") {
-          shares++;
-          let p = extra || detalle || "Prod";
-          if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
-          conteoProds[p].shares++;
-        }
-      });
+          if (tipo === "busqueda_producto" && detalle) {
+            busquedas++;
+            let term = String(detalle).toLowerCase().trim();
+            conteoBusquedas[term] = (conteoBusquedas[term] || 0) + 1;
+          } else if (tipo === "producto_favorito") {
+            likes++;
+            let p = extra || detalle || "Prod";
+            if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
+            conteoProds[p].likes++;
+          } else if (tipo === "producto_compartido") {
+            shares++;
+            let p = extra || detalle || "Prod";
+            if (!conteoProds[p]) conteoProds[p] = { likes: 0, shares: 0 };
+            conteoProds[p].shares++;
+          }
+        });
+      }
 
-      productos.forEach(p => {
-        if(p.categoria) conteoCat[p.categoria] = (conteoCat[p.categoria] || 0) + 1;
-        if(p.subcategoria) conteoUser[p.subcategoria] = (conteoUser[p.subcategoria] || 0) + 1;
-        if(p.proveedor) conteoProv[p.proveedor] = (conteoProv[p.proveedor] || 0) + 1;
-        if(p.estado) conteoEstado[p.estado] = (conteoEstado[p.estado] || 0) + 1;
-        if(p.categoria_sec || p.coleccion) {
-          let col = p.categoria_sec || p.coleccion;
-          conteoCol[col] = (conteoCol[col] || 0) + 1;
-        }
-      });
+      if (Array.isArray(productos)) {
+        productos.forEach(p => {
+          if(p.categoria) conteoCat[p.categoria] = (conteoCat[p.categoria] || 0) + 1;
+          if(p.subcategoria) conteoUser[p.subcategoria] = (conteoUser[p.subcategoria] || 0) + 1;
+          if(p.proveedor) conteoProv[p.proveedor] = (conteoProv[p.proveedor] || 0) + 1;
+          if(p.estado) conteoEstado[p.estado] = (conteoEstado[p.estado] || 0) + 1;
+          if(p.categoria_sec || p.coleccion) {
+            let col = p.categoria_sec || p.coleccion;
+            conteoCol[col] = (conteoCol[col] || 0) + 1;
+          }
+        });
+      }
 
       document.getElementById("stat-busquedas").textContent = busquedas;
       document.getElementById("stat-likes").textContent = likes;
@@ -459,22 +478,34 @@
 
       let tbodyLideres = document.getElementById("tabla-lideres");
       tbodyLideres.innerHTML = "";
-      Object.entries(conteoProds).sort((a,b)=>(b[1].likes+b[1].shares)-(a[1].likes+a[1].shares)).slice(0,5).forEach(([prod, st]) => {
-        tbodyLideres.innerHTML += `<tr><td>${prod}</td><td style="text-align:center; color:#f43f5e; font-weight:bold;">${st.likes}</td><td style="text-align:center; color:#10b981; font-weight:bold;">${st.shares}</td></tr>`;
-      });
+      let arrProds = Object.entries(conteoProds).sort((a,b)=>(b[1].likes+b[1].shares)-(a[1].likes+a[1].shares)).slice(0,5);
+      if (arrProds.length === 0) {
+        tbodyLideres.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Sin interacciones registradas</td></tr>`;
+      } else {
+        arrProds.forEach(([prod, st]) => {
+          tbodyLideres.innerHTML += `<tr><td>${prod}</td><td style="text-align:center; color:#f43f5e; font-weight:bold;">${st.likes}</td><td style="text-align:center; color:#10b981; font-weight:bold;">${st.shares}</td></tr>`;
+        });
+      }
 
       let listBusq = document.getElementById("lista-top-busquedas");
       listBusq.innerHTML = "";
-      Object.entries(conteoBusquedas).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([term, cnt]) => {
-        listBusq.innerHTML += `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;"><span>🔍 "${term}"</span><strong style="color:#60a5fa;">${cnt}</strong></li>`;
-      });
+      let arrBusq = Object.entries(conteoBusquedas).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      if (arrBusq.length === 0) {
+        listBusq.innerHTML = `<li style="color:#888; text-align:center;">Sin búsquedas recientes</li>`;
+      } else {
+        arrBusq.forEach(([term, cnt]) => {
+          listBusq.innerHTML += `<li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;"><span>🔍 "${term}"</span><strong style="color:#60a5fa;">${cnt}</strong></li>`;
+        });
+      }
 
       google.charts.setOnLoadCallback(() => {
         const drawDonut = (elementId, dataObj) => {
+          let target = document.getElementById(elementId);
+          if (!target) return;
           let arr = Object.entries(dataObj);
           if(arr.length === 0) arr = [['Sin datos', 1]];
           let data = google.visualization.arrayToDataTable([['Clave', 'Val'], ...arr]);
-          new google.visualization.PieChart(document.getElementById(elementId)).draw(data, {
+          new google.visualization.PieChart(target).draw(data, {
             pieHole: 0.4, backgroundColor: 'transparent', 
             chartArea: {width: '90%', height: '80%'},
             legend: {position: 'right', textStyle: {color: '#cbd5e1'}}
@@ -489,19 +520,39 @@
       });
     }
 
-    function poblarSelectsFormulario(configData) {
-      const cats = [...new Set(configData.map(x => x.categoria).filter(Boolean))];
-      const subs = [...new Set(configData.map(x => x.subcategoria).filter(Boolean))];
-      const provs = [...new Set(configData.map(x => x.proveedor).filter(Boolean))];
-      const cols = [...new Set(configData.map(x => x.categoria_sec || x.coleccion).filter(Boolean))];
+    // 🔧 CORRECCIÓN: Poblar y filtrar dinámicamente categoría y subcategoría
+    function poblarSelectsFormulario(productosData) {
+      if (!Array.isArray(productosData) || productosData.length === 0) return;
+
+      const cats = [...new Set(productosData.map(x => x.categoria).filter(Boolean))];
+      const subs = [...new Set(productosData.map(x => x.subcategoria).filter(Boolean))];
+      const provs = [...new Set(productosData.map(x => x.proveedor).filter(Boolean))];
+      const cols = [...new Set(productosData.map(x => x.categoria_sec || x.coleccion).filter(Boolean))];
 
       const llenarSelect = (id, arr) => {
-        document.getElementById(id).innerHTML = `<option value="">Seleccione...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<option value="">Seleccione...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
       };
+
       llenarSelect('prodCategoria', cats);
       llenarSelect('prodSubcategoria', subs);
       llenarSelect('prodProveedor', provs);
       llenarSelect('prodColeccion', cols);
+
+      // Evento dinámico: al cambiar categoría, filtrar subcategorías asociadas
+      const catSelect = document.getElementById('prodCategoria');
+      if (catSelect) {
+        catSelect.onchange = function() {
+          const catSeleccionada = this.value;
+          const subFiltradas = [...new Set(
+            productosData
+              .filter(x => !catSeleccionada || x.categoria === catSeleccionada)
+              .map(x => x.subcategoria)
+              .filter(Boolean)
+          )];
+          llenarSelect('prodSubcategoria', subFiltradas);
+        };
+      }
     }
 
     function renderizarWebsiteConfig(webConfigObj) {
@@ -534,8 +585,12 @@
           body: JSON.stringify({ action: "actualizar_config_web", clave: clave, valor: inputVal })
         });
         const result = await res.json();
-        if(result.status === "success") alert(`✅ Variable "${clave}" actualizada.`);
-        else alert("Error al actualizar.");
+        if(result.status === "success") {
+          alert(`✅ Variable "${clave}" actualizada.`);
+          cargarDatosGenerales();
+        } else {
+          alert("Error al actualizar.");
+        }
       } catch(err) { console.error(err); }
     }
 
@@ -592,7 +647,6 @@
 
         if (String(idOrden).toLowerCase().includes("id")) return;
 
-        // Guardamos el objeto completo como string JSON seguro para pasarlo al modal
         const ordenJson = encodeURIComponent(JSON.stringify(o));
 
         html += `
@@ -612,14 +666,13 @@
       tbody.innerHTML = html;
     }
 
-    // 👁️ VER DETALLES Y VALIDAR STOCK EN TIEMPO REAL
     function verDetallesOrden(ordenEncoded) {
       const o = JSON.parse(decodeURIComponent(ordenEncoded));
       const idOrden = o.id_pedido || o.idpedido || o.codigo_orden || o[0];
       const cliente = o.nombre_cliente || o.nombrecliente || o.cliente || o[2];
       const correo = o.correo || o[3];
       const tlf = o.tlf || o.telefono || o[4];
-      const productosTexto = o.productos || o[5] || ""; // Ej: "Correa Minimalista, 2, Anillo, 1"
+      const productosTexto = o.productos || o[5] || "";
       const metodoPago = o.metodo_pago || o.metodopago || o[9];
       const tipoPedido = o.tipo_pedido || o[7];
       const direccion = o.direccion || o[8];
@@ -641,9 +694,7 @@
             <tbody>
       `;
 
-      // Parsear los productos que vienen en formato plano o CSV desde la preorden
-      // Supongamos formato: "NombreProd, Cantidad, ..."
-      let partes = productosTexto.split(",");
+      let partes = String(productosTexto).split(",");
       let listaItems = [];
       for (let i = 0; i < partes.length; i += 2) {
         let nombreProd = partes[i] ? partes[i].trim() : "";
@@ -655,17 +706,15 @@
         html += `<tr><td colspan="4" style="text-align:center; color:#888;">${productosTexto || 'Sin detalle estructurado'}</td></tr>`;
       } else {
         listaItems.forEach(item => {
-          // Buscar el producto en el catálogo global para ver su stock real
           let stockReal = 0;
           if(cacheGlobalData && cacheGlobalData.productos) {
             let prodEncontrado = cacheGlobalData.productos.find(p => 
               String(p.nombre || p[1]).toLowerCase().includes(item.nombre.toLowerCase())
             );
             if(prodEncontrado) {
-              // Ajusta según el nombre de la columna de stock en tu hoja (ej. stock, cantidad, etc.)
               stockReal = parseInt(prodEncontrado.stock || prodEncontrado.cantidad || prodEncontrado[13] || 10) || 10;
             } else {
-              stockReal = 5; // Stock por defecto si no lo encuentra exacto
+              stockReal = 5;
             }
           }
 
