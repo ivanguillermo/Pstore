@@ -444,7 +444,7 @@
 
       productos.forEach(p => {
         if(p.categoria) conteoCat[p.categoria] = (conteoCat[p.categoria] || 0) + 1;
-        if(p.subcategoria) conteoUser[p.subcategoria] = (conteoUser[p.subcategoria] || 0) + 1;
+        if(p.categoria_secundaria) conteoUser[p.categoria_secundaria] = (conteoUser[p.categoria_secundaria] || 0) + 1;
         if(p.proveedor) conteoProv[p.proveedor] = (conteoProv[p.proveedor] || 0) + 1;
         if(p.estado) conteoEstado[p.estado] = (conteoEstado[p.estado] || 0) + 1;
         if(p.categoria_sec || p.coleccion) {
@@ -494,7 +494,7 @@
 
       const cats = [...new Set(productosData.map(x => String(x.categoria || "").trim()).filter(Boolean))];
       // Cargamos TODAS las subcategorías globales sin filtrar
-      const subs = [...new Set(productosData.map(x => String(x.subcategoria || "").trim()).filter(Boolean))];
+      const subs = [...new Set(productosData.map(x => String(x.categoria_secundaria || "").trim()).filter(Boolean))];
       const provs = [...new Set(productosData.map(x => String(x.proveedor || "").trim()).filter(Boolean))];
       const cols = [...new Set(productosData.map(x => String(x.categoria_sec || x.coleccion || "").trim()).filter(Boolean))];
 
