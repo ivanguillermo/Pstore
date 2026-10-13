@@ -489,11 +489,11 @@
       });
     }
 
-   function poblarSelectsFormulario(productosData) {
+  function poblarSelectsFormulario(productosData) {
       if (!Array.isArray(productosData) || productosData.length === 0) return;
 
-      // Limpiamos y filtramos valores nulos o con espacios vacíos
       const cats = [...new Set(productosData.map(x => String(x.categoria || "").trim()).filter(Boolean))];
+      // Cargamos TODAS las subcategorías globales sin filtrar
       const subs = [...new Set(productosData.map(x => String(x.subcategoria || "").trim()).filter(Boolean))];
       const provs = [...new Set(productosData.map(x => String(x.proveedor || "").trim()).filter(Boolean))];
       const cols = [...new Set(productosData.map(x => String(x.categoria_sec || x.coleccion || "").trim()).filter(Boolean))];
@@ -509,21 +509,6 @@
       llenarSelect('prodSubcategoria', subs);
       llenarSelect('prodProveedor', provs);
       llenarSelect('prodColeccion', cols);
-
-      // Filtrado dinámico de subcategorías al cambiar de categoría
-      const catSelect = document.getElementById('prodCategoria');
-      if (catSelect) {
-        catSelect.onchange = function() {
-          const catSeleccionada = this.value;
-          const subFiltradas = [...new Set(
-            productosData
-              .filter(x => !catSeleccionada || String(x.categoria || "").trim() === catSeleccionada)
-              .map(x => String(x.subcategoria || "").trim())
-              .filter(Boolean)
-          )];
-          llenarSelect('prodSubcategoria', subFiltradas);
-        };
-      }
     }
 
     function renderizarWebsiteConfig(webConfigObj) {
