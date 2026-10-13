@@ -207,10 +207,30 @@
       </div>
 
       <!-- TAB 2: REGISTRAR PRODUCTO -->
+     <!-- TAB 2: REGISTRAR PRODUCTO -->
       <div id="tab-productos" class="tab-content">
         <div class="card" style="max-width: 800px; margin: 0 auto;">
           <h2 style="margin-top:0; color:#3b82f6;">➕ Registrar Nuevo Producto</h2>
-          <form id="formProducto" onsubmit="enviarNuevoProducto(event)">
+          
+          <!-- PASO 1: CARGA DE IMAGEN A DRIVE -->
+          <div style="background: #0f172a; padding: 15px; border-radius: 8px; border: 1px dashed #38bdf8; margin-bottom: 20px;">
+            <label style="color: #38bdf8; font-weight: bold; margin-bottom: 10px;">📸 Paso 1: Subir Imagen a Drive</label>
+            
+            <div style="margin-bottom: 10px;">
+              <input type="file" id="prodImagenFile" accept="image/*" onchange="mostrarPreviewLocal(this)" style="font-size: 12px;">
+            </div>
+
+            <div id="previewContainer" style="display: none; margin-top: 10px; text-align: center;">
+              <img id="imgPreview" src="" alt="Vista previa" style="max-height: 150px; border-radius: 6px; border: 1px solid #334155; display: inline-block;">
+              <p id="textoEstadoImagen" style="font-size: 11px; color: #f59e0b; margin-top: 4px;">⏳ Imagen cargada localmente. Falta subir a Drive.</p>
+            </div>
+
+            <button type="button" class="btn-action" style="width:100%; margin-top:10px;" onclick="enviarImagenADrive()">☁️ Subir Imagen a Drive</button>
+          </div>
+
+          <!-- PASO 2: FORMULARIO DE DATOS DEL PRODUCTO -->
+          <form id="formProducto" onsubmit="enviarNuevoProductoFinal(event)">
+            <h3 style="color: #10b981; font-size: 14px; margin-bottom: 10px;">📝 Paso 2: Detalles del Artículo</h3>
             <div class="form-grid">
               <div class="form-group">
                 <label>Nombre del Producto:</label>
@@ -219,6 +239,14 @@
               <div class="form-group">
                 <label>Precio ($):</label>
                 <input type="number" step="0.01" id="prodPrecio" required placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Costo ($):</label>
+                <input type="number" step="0.01" id="prodCosto" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Stock:</label>
+                <input type="number" id="prodStock" placeholder="0" value="1">
               </div>
               <div class="form-group">
                 <label>Categoría:</label>
@@ -240,16 +268,12 @@
                 <label>Talla / Medida:</label>
                 <input type="text" id="prodTalla" placeholder="Ej: Única">
               </div>
-              <div class="form-group">
-                <label>Descripción:</label>
-                <input type="text" id="prodDescripcion" placeholder="Detalle del producto">
-              </div>
               <div class="form-group" style="grid-column: span 2;">
-                <label>Imagen Local:</label>
-                <input type="file" id="prodImagenFile" accept="image/*" required>
+                <label>Descripción:</label>
+                <textarea id="prodDescripcion" rows="3" placeholder="Detalle del producto"></textarea>
               </div>
             </div>
-            <button type="submit" class="btn-submit">💾 Guardar y Publicar</button>
+            <button type="submit" class="btn-submit">💾 Guardar en Catálogo</button>
           </form>
         </div>
       </div>
