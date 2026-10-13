@@ -742,6 +742,108 @@
         }
       } catch(err) { console.error(err); }
     }
+
+    let base64ImagenGlobal = "";
+let nombreArchivoGlobal = "";
+let urlDriveFinal = "";
+
+// Muestra la vista previa local antes de subir
+function mostrarPreviewLocal(input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    nombreArchivoGlobal = file.name;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        base64ImagenGlobal = e.target.result;
+        document.getElementById('imgPreview').src = base64ImagenGlobal;
+        document.getElementById('previewContainer').style.display = "block";
+        document.getElementById('textoEstadoImagen').innerText = "⏳ Imagen lista para subir a Drive.";
+        document.getElementById('textoEstadoImagen').style.color = "#f59e0b";
+        urlDriveFinal = ""; // Reiniciar enlace si cambia de imagen
+    };
+    reader.readAsDataURL(file);
+}
+
+// Paso 1: Sube la imagen a Drive de forma independiente
+async function enviarImagenADrive() {
+    if (!base64ImagenGlobal) {
+        alert("Por favor selecciona una imagen primero.");
+        return;
+    }
+
+    alert("☁️ Subiendo imagen a Google Drive. Por favor espera un momento...");
+
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "subir_imagen_drive",
+                imagenBase64: base64ImagenGlobal,
+                imagenNombre: nombreArchivoGlobal
+            })
+        });
+
+        const result = await response.json();
+        if (result.status === "success") {
+            urlDriveFinal = result.imagen_drive;
+            document.getElementById('textoEstadoImagen').innerText = "✓ ¡Imagen subida a Drive con éxito!";
+            document.getElementById('textoEstadoImagen').style.color = "#10b981";
+            alert("✅ ¡Imagen cargada en Drive correctamente! Ahora puedes completar los datos y guardar el producto.");
+        } else {
+            alert("Error al subir a Drive: " + result.message);
+        }
+    } catch (error) {
+        alert("Error de red al subir la imagen: " + error.message);
+    }
+}
+
+// Paso 2: Guarda el producto completo incluyendo la URL de Drive ya obtenida
+async function enviarNuevoProductoFinal(e) {
+    e.preventDefault();
+
+    if (!urlDriveFinal) {
+        alert("⚠️ Debes hacer clic en 'Subir Imagen a Drive' (Paso 1) antes de guardar el producto.");
+        return;
+    }
+
+    const payload = {
+        action: "crear_producto",
+        nombre: document.getElementById('prodNombre').value,
+        precio: document.getElementById('prodPrecio').value,
+        costo: document.getElementById('prodCosto').value,
+        stock: document.getElementById('prodStock').value,
+        categoria: document.getElementById('prodCategoria').value,
+        subcategoria: document.getElementById('prodSubcategoria').value,
+        proveedor: document.getElementById('prodProveedor').value,
+        coleccion: document.getElementById('prodColeccion').value,
+        talla: document.getElementById('prodTalla').value,
+        descripcion: document.getElementById('prodDescripcion').value,
+        imagen_drive: urlDriveFinal
+    };
+
+    try {
+        const res = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        
+        if (result.status === "success") {
+            alert("✅ ¡Producto guardado correctamente en Catalogo1 con su enlace de Drive!");
+            document.getElementById('formProducto').reset();
+            document.getElementById('prodImagenFile').value = "";
+            document.getElementById('previewContainer').style.display = "none";
+            base64ImagenGlobal = "";
+            urlDriveFinal = "";
+            cargarDatosGenerales();
+        } else {
+            alert("Error al guardar el producto: " + result.message);
+        }
+    } catch(err) {
+        alert("Error de red al guardar producto.");
+    }
+}
   </script>
 </body>
 </html>
