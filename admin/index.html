@@ -814,6 +814,8 @@ async function enviarImagenADrive() {
         });
 
         const result = await response.json();
+        console.log("Respuesta completa del servidor:", result);
+        console.log("Objeto sugerencia de la IA:", result.sugerencia);
         if (result.status === "success") {
             // 1. Precargar URL de Drive
             document.getElementById('prodImagenDriveUrl').value = result.imagen_drive;
