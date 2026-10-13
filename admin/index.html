@@ -447,8 +447,8 @@
         if(p.subcategoria) conteoUser[p.subcategoria] = (conteoUser[p.subcategoria] || 0) + 1;
         if(p.proveedor) conteoProv[p.proveedor] = (conteoProv[p.proveedor] || 0) + 1;
         if(p.estado) conteoEstado[p.estado] = (conteoEstado[p.estado] || 0) + 1;
-        if(p.categoria_sec || p.coleccion2) {
-          let col = p.categoria_sec || p.coleccion2;
+        if(p.categoria_sec || p.coleccion) {
+          let col = p.categoria_sec || p.coleccion;
           conteoCol[col] = (conteoCol[col] || 0) + 1;
         }
       });
