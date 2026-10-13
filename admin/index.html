@@ -361,7 +361,7 @@
 
   <script>
     const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","paulaherro.05@gmail.com","latiendadepaula@gmail.com"];
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcalfG3WPU8egBjbKeao7qT818N1rleqWtM1D0PSgA7f5qiByhax6vwY5o1avf5iBPEA/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWu4aH5eoA0Tej0nwgJjocRLk9xFsHoaiEzoWI_Wi5qzk-XnNrGj2Zq4Upl_XqVGnxSg/exec";
 
     let cacheGlobalData = null; // Para guardar productos y stock en memoria para el modal
     
@@ -800,7 +800,7 @@ async function enviarImagenADrive() {
 
     const nombrePersonalizado = document.getElementById('nombreImagenPersonalizado').value.trim() || "producto";
 
-    alert("☁️ Subiendo imagen a Google Drive...");
+    alert("☁️ Subiendo imagen a Drive y consultando a la IA...");
 
     try {
         const response = await fetch(SCRIPT_URL, {
@@ -815,16 +815,27 @@ async function enviarImagenADrive() {
 
         const result = await response.json();
         if (result.status === "success") {
-            // 💡 Precarga automática visible en el formulario
+            // 1. Precargar URL de Drive
             document.getElementById('prodImagenDriveUrl').value = result.imagen_drive;
-            document.getElementById('textoEstadoImagen').innerText = "✓ ¡Imagen subida a Drive con éxito!";
+
+            // 2. Precargar campos devueltos por la IA (¡Totalmente editables por ti!)
+            if (result.sugerencia) {
+                document.getElementById('prodNombre').value = result.sugerencia.nombre || "";
+                document.getElementById('prodCategoria').value = result.sugerencia.categoria || "";
+                document.getElementById('prodSubcategoria').value = result.sugerencia.categoria_secundaria || "";
+                document.getElementById('prodColeccion').value = result.sugerencia.coleccion || "";
+                document.getElementById('prodDescripcion').value = result.sugerencia.descripcion || "";
+            }
+
+            document.getElementById('textoEstadoImagen').innerText = "✓ ¡Imagen subida y analizada por la IA!";
             document.getElementById('textoEstadoImagen').style.color = "#10b981";
-            alert("✅ ¡Imagen cargada en Drive correctamente! La dirección se ha precargado abajo en el formulario.");
+            
+            alert("✨ ¡Listo! La imagen está en Drive y la IA ha precargado los campos. Puedes editarlos libremente antes de guardar.");
         } else {
-            alert("Error al subir a Drive: " + result.message);
+            alert("Error en el servidor: " + result.message);
         }
     } catch (error) {
-        alert("Error de red al subir la imagen: " + error.message);
+        alert("Error de red al procesar: " + error.message);
     }
 }
 
