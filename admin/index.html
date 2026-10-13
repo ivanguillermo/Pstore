@@ -207,21 +207,27 @@
       </div>
 
      <!-- TAB 2: REGISTRAR PRODUCTO -->
+     <!-- TAB 2: REGISTRAR PRODUCTO -->
       <div id="tab-productos" class="tab-content">
         <div class="card" style="max-width: 800px; margin: 0 auto;">
           <h2 style="margin-top:0; color:#3b82f6;">➕ Registrar Nuevo Producto</h2>
           
-          <!-- PASO 1: CARGA DE IMAGEN A DRIVE -->
+          <!-- PASO 1: CARGA DE IMAGEN Y NOMBRE PERSONALIZADO -->
           <div style="background: #0f172a; padding: 15px; border-radius: 8px; border: 1px dashed #38bdf8; margin-bottom: 20px;">
-            <label style="color: #38bdf8; font-weight: bold; margin-bottom: 10px;">📸 Paso 1: Subir Imagen a Drive</label>
+            <label style="color: #38bdf8; font-weight: bold; margin-bottom: 10px;">📸 1. Cargar Imagen y Nombre en Drive</label>
             
+            <div style="margin-bottom: 10px;">
+              <label style="font-size: 11px; color: #94a3b8;">Título / Nombre del archivo en Drive:</label>
+              <input type="text" id="nombreImagenPersonalizado" placeholder="Ej: Correa_Cuero_Negro" style="font-size: 13px;">
+            </div>
+
             <div style="margin-bottom: 10px;">
               <input type="file" id="prodImagenFile" accept="image/*" onchange="mostrarPreviewLocal(this)" style="font-size: 12px;">
             </div>
 
             <div id="previewContainer" style="display: none; margin-top: 10px; text-align: center;">
               <img id="imgPreview" src="" alt="Vista previa" style="max-height: 150px; border-radius: 6px; border: 1px solid #334155; display: inline-block;">
-              <p id="textoEstadoImagen" style="font-size: 11px; color: #f59e0b; margin-top: 4px;">⏳ Imagen cargada localmente. Falta subir a Drive.</p>
+              <p id="textoEstadoImagen" style="font-size: 11px; color: #f59e0b; margin-top: 4px;">⏳ Imagen cargada localmente.</p>
             </div>
 
             <button type="button" class="btn-action" style="width:100%; margin-top:10px;" onclick="enviarImagenADrive()">☁️ Subir Imagen a Drive</button>
@@ -229,7 +235,7 @@
 
           <!-- PASO 2: FORMULARIO DE DATOS DEL PRODUCTO -->
           <form id="formProducto" onsubmit="enviarNuevoProductoFinal(event)">
-            <h3 style="color: #10b981; font-size: 14px; margin-bottom: 10px;">📝 Paso 2: Detalles del Artículo</h3>
+            <h3 style="color: #10b981; font-size: 14px; margin-bottom: 10px;">📝 2. Detalles del Artículo</h3>
             <div class="form-grid">
               <div class="form-group">
                 <label>Nombre del Producto:</label>
@@ -268,18 +274,18 @@
                 <input type="text" id="prodTalla" placeholder="Ej: Única">
               </div>
               
-              <!-- CAMPO PARA LA URL DE DRIVE-->
+              <!-- CAMPO DE URL DE DRIVE (Donde se precarga la dirección automáticamente) -->
               <div class="form-group" style="grid-column: span 2;">
                 <label style="color: #38bdf8;">🔗 URL de Google Drive de la Imagen:</label>
                 <input type="text" id="prodImagenDriveUrl" readonly placeholder="Se autocompletará al subir la imagen..." style="background: #0f172a; color: #10b981; font-weight: bold;">
               </div>
-              
+
               <div class="form-group" style="grid-column: span 2;">
                 <label>Descripción:</label>
                 <textarea id="prodDescripcion" rows="3" placeholder="Detalle del producto"></textarea>
               </div>
             </div>
-            <button type="submit" class="btn-submit">💾 Guardar en Catálogo</button>
+            <button type="submit" class="btn-submit">💾 Guardar Artículo en Catálogo1</button>
           </form>
         </div>
       </div>
@@ -355,9 +361,10 @@
 
   <script>
     const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","paulaherro.05@gmail.com","latiendadepaula@gmail.com"];
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxid2riJTIb06QuwWaE6HoSlRXBBYWYl3makc4sjQGGSGHJJ5JfDb03FMGZyUOiy_fgRA/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcalfG3WPU8egBjbKeao7qT818N1rleqWtM1D0PSgA7f5qiByhax6vwY5o1avf5iBPEA/exec";
 
     let cacheGlobalData = null; // Para guardar productos y stock en memoria para el modal
+    
 
     google.charts.load('current', {'packages':['corechart']});
 
@@ -766,6 +773,13 @@ function mostrarPreviewLocal(input) {
     const file = input.files[0];
     nombreArchivoGlobal = file.name;
 
+    // Autocompletar el nombre en Drive si el campo está vacío
+    const inputNombre = document.getElementById('nombreImagenPersonalizado');
+    if (!inputNombre.value) {
+        const nombreSinExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        inputNombre.value = nombreSinExt.replace(/[^a-zA-Z0-9_-]/g, '_');
+    }
+
     const reader = new FileReader();
     reader.onload = function(e) {
         base64ImagenGlobal = e.target.result;
@@ -773,7 +787,6 @@ function mostrarPreviewLocal(input) {
         document.getElementById('previewContainer').style.display = "block";
         document.getElementById('textoEstadoImagen').innerText = "⏳ Imagen lista para subir a Drive.";
         document.getElementById('textoEstadoImagen').style.color = "#f59e0b";
-        urlDriveFinal = ""; // Reiniciar enlace si cambia de imagen
     };
     reader.readAsDataURL(file);
 }
@@ -785,7 +798,9 @@ async function enviarImagenADrive() {
         return;
     }
 
-    alert("☁️ Subiendo imagen a Google Drive. Por favor espera un momento...");
+    const nombrePersonalizado = document.getElementById('nombreImagenPersonalizado').value.trim() || "producto";
+
+    alert("☁️ Subiendo imagen a Google Drive...");
 
     try {
         const response = await fetch(SCRIPT_URL, {
@@ -793,16 +808,18 @@ async function enviarImagenADrive() {
             body: JSON.stringify({
                 action: "subir_imagen_drive",
                 imagenBase64: base64ImagenGlobal,
-                imagenNombre: nombreArchivoGlobal
+                imagenNombre: nombreArchivoGlobal,
+                nombrePersonalizado: nombrePersonalizado
             })
         });
 
         const result = await response.json();
         if (result.status === "success") {
-            urlDriveFinal = result.imagen_drive;
+            // 💡 Precarga automática visible en el formulario
+            document.getElementById('prodImagenDriveUrl').value = result.imagen_drive;
             document.getElementById('textoEstadoImagen').innerText = "✓ ¡Imagen subida a Drive con éxito!";
             document.getElementById('textoEstadoImagen').style.color = "#10b981";
-            alert("✅ ¡Imagen cargada en Drive correctamente! Ahora puedes completar los datos y guardar el producto.");
+            alert("✅ ¡Imagen cargada en Drive correctamente! La dirección se ha precargado abajo en el formulario.");
         } else {
             alert("Error al subir a Drive: " + result.message);
         }
@@ -815,8 +832,10 @@ async function enviarImagenADrive() {
 async function enviarNuevoProductoFinal(e) {
     e.preventDefault();
 
+    const urlDriveFinal = document.getElementById('prodImagenDriveUrl').value;
+
     if (!urlDriveFinal) {
-        alert("⚠️ Debes hacer clic en 'Subir Imagen a Drive' (Paso 1) antes de guardar el producto.");
+        alert("⚠️ Debes hacer clic en 'Subir Imagen a Drive' (Paso 1) primero para obtener su URL.");
         return;
     }
 
@@ -843,15 +862,15 @@ async function enviarNuevoProductoFinal(e) {
         const result = await res.json();
         
         if (result.status === "success") {
-            alert("✅ ¡Producto guardado correctamente en Catalogo1 con su enlace de Drive!");
+            alert("✅ ¡Producto guardado correctamente en Catalogo1!");
             document.getElementById('formProducto').reset();
             document.getElementById('prodImagenFile').value = "";
             document.getElementById('previewContainer').style.display = "none";
+            document.getElementById('prodImagenDriveUrl').value = "";
             base64ImagenGlobal = "";
-            urlDriveFinal = "";
             cargarDatosGenerales();
         } else {
-            alert("Error al guardar el producto: " + result.message);
+            alert("Error al guardar: " + result.message);
         }
     } catch(err) {
         alert("Error de red al guardar producto.");
