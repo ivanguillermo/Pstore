@@ -388,7 +388,7 @@
         
         renderizarVentas(data.ventas || []);
         procesarAnaliticaYGraficos(data.productos || data.catalogo || [], data.eventos || [], data.ventas || []);
-        poblarSelectsFormulario(data.config || data.productos || []);
+        poblarSelectsFormulario(data.productos || data.config || []);
         renderizarWebsiteConfig(data.website || {});
         renderizarPreordenes(data.preordenes || []);
       } catch (err) {
@@ -489,19 +489,41 @@
       });
     }
 
-    function poblarSelectsFormulario(configData) {
-      const cats = [...new Set(configData.map(x => x.categoria).filter(Boolean))];
-      const subs = [...new Set(configData.map(x => x.subcategoria).filter(Boolean))];
-      const provs = [...new Set(configData.map(x => x.proveedor).filter(Boolean))];
-      const cols = [...new Set(configData.map(x => x.categoria_sec || x.coleccion).filter(Boolean))];
+   function poblarSelectsFormulario(productosData) {
+      if (!Array.isArray(productosData) || productosData.length === 0) return;
+
+      // Limpiamos y filtramos valores nulos o con espacios vacíos
+      const cats = [...new Set(productosData.map(x => String(x.categoria || "").trim()).filter(Boolean))];
+      const subs = [...new Set(productosData.map(x => String(x.subcategoria || "").trim()).filter(Boolean))];
+      const provs = [...new Set(productosData.map(x => String(x.proveedor || "").trim()).filter(Boolean))];
+      const cols = [...new Set(productosData.map(x => String(x.categoria_sec || x.coleccion || "").trim()).filter(Boolean))];
 
       const llenarSelect = (id, arr) => {
-        document.getElementById(id).innerHTML = `<option value="">Seleccione...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
+        const el = document.getElementById(id);
+        if (el) {
+          el.innerHTML = `<option value="">Seleccione...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
+        }
       };
+
       llenarSelect('prodCategoria', cats);
       llenarSelect('prodSubcategoria', subs);
       llenarSelect('prodProveedor', provs);
       llenarSelect('prodColeccion', cols);
+
+      // Filtrado dinámico de subcategorías al cambiar de categoría
+      const catSelect = document.getElementById('prodCategoria');
+      if (catSelect) {
+        catSelect.onchange = function() {
+          const catSeleccionada = this.value;
+          const subFiltradas = [...new Set(
+            productosData
+              .filter(x => !catSeleccionada || String(x.categoria || "").trim() === catSeleccionada)
+              .map(x => String(x.subcategoria || "").trim())
+              .filter(Boolean)
+          )];
+          llenarSelect('prodSubcategoria', subFiltradas);
+        };
+      }
     }
 
     function renderizarWebsiteConfig(webConfigObj) {
