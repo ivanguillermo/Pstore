@@ -206,7 +206,6 @@
         </div>
       </div>
 
-      <!-- TAB 2: REGISTRAR PRODUCTO -->
      <!-- TAB 2: REGISTRAR PRODUCTO -->
       <div id="tab-productos" class="tab-content">
         <div class="card" style="max-width: 800px; margin: 0 auto;">
@@ -268,6 +267,13 @@
                 <label>Talla / Medida:</label>
                 <input type="text" id="prodTalla" placeholder="Ej: Única">
               </div>
+              
+              <!-- CAMPO PARA LA URL DE DRIVE-->
+              <div class="form-group" style="grid-column: span 2;">
+                <label style="color: #38bdf8;">🔗 URL de Google Drive de la Imagen:</label>
+                <input type="text" id="prodImagenDriveUrl" readonly placeholder="Se autocompletará al subir la imagen..." style="background: #0f172a; color: #10b981; font-weight: bold;">
+              </div>
+              
               <div class="form-group" style="grid-column: span 2;">
                 <label>Descripción:</label>
                 <textarea id="prodDescripcion" rows="3" placeholder="Detalle del producto"></textarea>
@@ -349,7 +355,7 @@
 
   <script>
     const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","paulaherro.05@gmail.com","latiendadepaula@gmail.com"];
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwO0LMWLyIzFuBgiLDRJjLZPo3zDIWtGkoh0WO-Cjbul0d1BDLLAZ-tm85YK-j9gCB1sQ/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxid2riJTIb06QuwWaE6HoSlRXBBYWYl3makc4sjQGGSGHJJ5JfDb03FMGZyUOiy_fgRA/exec";
 
     let cacheGlobalData = null; // Para guardar productos y stock en memoria para el modal
 
@@ -572,6 +578,12 @@
 
     async function enviarNuevoProducto(e) {
       e.preventDefault();
+      const urlDriverCapturada = document.getElementById('prodImagenDriveUrl').value;
+      if (!urlDriverCapturada) {
+        alert("⚠️ Por favor sube la imagen a Drive primero para obtener su dirección.");
+        return;
+    }
+      
       const fileInput = document.getElementById('prodImagenFile');
       const file = fileInput.files[0];
       let reader = new FileReader();
@@ -587,7 +599,8 @@
           talla: document.getElementById('prodTalla').value,
           descripcion: document.getElementById('prodDescripcion').value,
           imagenBase64: reader.result,
-          imagenNombre: file.name
+          imagenNombre: file.name,
+          imagen_drive: urlDriverCapturada
         };
         await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
         alert("✅ Producto registrado.");
