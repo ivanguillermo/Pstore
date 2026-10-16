@@ -19,6 +19,13 @@ const CONFIG_PSTORE = {
 
   // 3. Enlace de publicación CSV de tu pestaña 'Configuracion' en Google Sheets
   urlSheetConfig: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_D4Cym7p0ATsh5UCG2Q3kbvhy5WuMPx0Q8gCfdz_l9IDoaCb4jn1T8zQ9YKCCvt-0GA0vkDrwKXX2/pub?gid=1458625703&single=true&output=csv",
-  scriptUrl:"https://script.google.com/macros/s/AKfycbw-FEfUH-FHSfrtpprUFSBEjwrKtdme0emlQkM86t9rXsLcWW-pEMo9rZ8UF8LOG8-ZPg/exec"
-  
+  // 4. URL ÚNICA del Apps Script (pedidos, métricas, tokens push). Cambia SOLO aquí.
+  //    Debe ser el despliegue donde publicaste pstore.gs.
+  scriptUrl: "https://script.google.com/macros/s/AKfycbz40EOo3jeOAXgy7ARuVbjDD0mWT9a7KhMTuWOpglsg9KRc-ooOeTXnek3sFbjkAEJoPw/exec",
+
+  // 5. Tasa de emergencia (Bs. por USD) si falla la hoja Y no hay una tasa guardada. 0 = sin respaldo.
+  tasaBcvRespaldo: 0,
+
+  // 6. Se llena sola con las variables "--algo" de tu hoja `website`. No tocar.
+  estilosCSS: {}
 };
