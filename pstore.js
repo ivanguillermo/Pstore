@@ -14,34 +14,46 @@ let paginaActual = 1;
 const productosPorPagina = 20;
 
 // ==========================================
-// REGISTRO DE EVENTOS Y MÉTRICAS
+// UTILIDADES BASE
 // ==========================================
-const URL_APPS_SCRIPT_EVENTOS = "https://script.google.com/macros/s/AKfycbzEgXQxewVbQSo_7CfL-G0mZCBiuMqM-XLaUGVYgpy-lAslFF5wHKuq1WNB1-6FugvXzA/exec"; 
+// Escapa texto del Sheet antes de meterlo en innerHTML (evita HTML roto / inyección)
+function esc(valor) {
+  return String(valor ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-function registrarEvento(nombreEvento, detalle = "", extra = "") {
-  if (!URL_APPS_SCRIPT_EVENTOS || URL_APPS_SCRIPT_EVENTOS === "https://script.google.com/macros/s/AKfycbzEgXQxewVbQSo_7CfL-G0mZCBiuMqM-XLaUGVYgpy-lAslFF5wHKuq1WNB1-6FugvXzA/exec") return;
-  const ubicacion = document.getElementById("cliente-ciudad")?.value || "No especificada";
-  const usuario = sessionStorage.getItem("user_email") || "Anónimo";
-  
-  const payload = {
-    evento: nombreEvento,
-    detalle: detalle,
-    extra: extra,
-    ubicacion: ubicacion, // Ciudad del usuario
-    usuario: usuario,     // Correo si inició sesión
-    fecha: new Date().toISOString()
-  };
-
+// Envía un JSON al Apps Script (la URL vive SOLO en config.js -> scriptUrl)
+function enviarAlScript(payload) {
+  if (typeof CONFIG_PSTORE === "undefined" || !CONFIG_PSTORE.scriptUrl) return;
+  const cuerpo = JSON.stringify(payload);
   if (navigator.sendBeacon) {
-    navigator.sendBeacon(CONFIG_PSTORE.scriptUrl, JSON.stringify(payload));
+    navigator.sendBeacon(CONFIG_PSTORE.scriptUrl, cuerpo);
   } else {
     fetch(CONFIG_PSTORE.scriptUrl, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: cuerpo
     }).catch(e => console.error(e));
   }
+}
+
+// ==========================================
+// REGISTRO DE EVENTOS Y MÉTRICAS
+// ==========================================
+function registrarEvento(nombreEvento, detalle = "", extra = "") {
+  enviarAlScript({
+    action: "registrar_evento",
+    evento: nombreEvento,
+    detalle: detalle,
+    extra: extra,
+    ubicacion: document.getElementById("cliente-ciudad")?.value || "No especificada",
+    usuario: sessionStorage.getItem("user_email") || "Anónimo"
+  });
 }
 
 // 1. Algoritmo para mezclar elementos de forma aleatoria (Fisher-Yates)
@@ -75,27 +87,23 @@ function ordenarProductosParaCatalogo(todosLosProductos) {
   // Une las 4 novedades al inicio + el resto mezclado
   return [...productosNuevos, ...restantesMezclados];
 }
-// --- OBTENCIÓN AUTOMÁTICA DE TASA BCV ---
-async function obtenerTasaBCV() {
-  try {
-    // 🌐 Aquí pegas la URL que te dio Google Apps Script al publicar el código de arriba
-    const res = await fetch("https://script.google.com/macros/s/AKfycbzEgXQxewVbQSo_7CfL-G0mZCBiuMqM-XLaUGVYgpy-lAslFF5wHKuq1WNB1-6FugvXzA/exec"); 
-    
-    if (res.ok) {
-      const data = await res.json();
-      
-      // data.tasaBcv viene directamente de lo que el script leyó de la celda B12
-      if (data && data.tasaBcv) {
-        tasaBcvActual = parseFloat(data.tasaBcv);
-        actualizarIndicadorTasa();
-        return;
-      }
-    }
-    throw new Error("No se pudo leer la celda B12");
-  } catch (e) {
-    console.warn("Error con la tasa, usando respaldo de config.js:", CONFIG_PSTORE.tasaBcvRespaldo);
-    tasaBcvActual = CONFIG_PSTORE.tasaBcvRespaldo || 0;
-    actualizarIndicadorTasa();
+// --- TASA BCV ---
+// La fuente oficial es la fila "tasa_bcv" de tu hoja `website` (se lee en sincronizarConGoogleSheets).
+// Aquí solo se carga un valor de respaldo al arrancar: la última tasa buena guardada, o la de config.js.
+function cargarTasaDeRespaldo() {
+  if (tasaBcvActual) return;
+  const guardada = parseFloat(localStorage.getItem("pstore_tasa_bcv"));
+  const respaldo = parseFloat(CONFIG_PSTORE.tasaBcvRespaldo);
+  tasaBcvActual = guardada > 0 ? guardada : (respaldo > 0 ? respaldo : null);
+  actualizarIndicadorTasa();
+  activarBotonMoneda();
+}
+
+function activarBotonMoneda() {
+  const btn = document.getElementById("btn-toggle-moneda");
+  if (btn && tasaBcvActual) {
+    btn.style.display = "inline-flex";
+    btn.onclick = alternarMoneda;
   }
 }
 
@@ -148,25 +156,23 @@ function aplicarConfiguracion(config) {
   }
 }
 
-// Sincronización con Google Sheets para Configuración
+// Sincronización con Google Sheets para Configuración (hoja `website`, publicada como CSV)
 async function sincronizarConGoogleSheets() {
   if (typeof CONFIG_PSTORE === "undefined" || !CONFIG_PSTORE.urlSheetConfig) return;
+  CONFIG_PSTORE.estilosCSS = CONFIG_PSTORE.estilosCSS || {};
 
   try {
-    const res = await fetch(CONFIG_PSTORE.urlSheetConfig);
+    const sep = CONFIG_PSTORE.urlSheetConfig.includes("?") ? "&" : "?";
+    const res = await fetch(`${CONFIG_PSTORE.urlSheetConfig}${sep}t=${Date.now()}`);
     if (!res.ok) throw new Error("Error al obtener la configuración remota");
 
     const csvText = await res.text();
-    const lineas = csvText.split("\n");
+    // PapaParse maneja bien comas, comillas y saltos de línea \r\n
+    const filas = Papa.parse(csvText, { skipEmptyLines: true }).data;
 
-    lineas.forEach(linea => {
-      if (!linea.trim()) return;
-
-      const partes = linea.split(",");
-      const param = partes[0]?.trim();
-      // Unir el resto de partes por si un valor contiene comas legítimas (ej. fuentes)
-      let valor = partes.slice(1).join(",")?.trim();
-
+    filas.forEach(fila => {
+      const param = String(fila[0] ?? "").trim();
+      let valor = String(fila[1] ?? "").trim();
       if (!param || !valor) return;
 
       // Limpiar comillas envolventes
@@ -176,16 +182,15 @@ async function sincronizarConGoogleSheets() {
         const tasaParsed = parseFloat(valor.replace(",", "."));
         if (!isNaN(tasaParsed) && tasaParsed > 0) {
           tasaBcvActual = tasaParsed;
+          localStorage.setItem("pstore_tasa_bcv", String(tasaParsed));
           actualizarIndicadorTasa();
         }
       }
 
-      // Procesar variables CSS
-      if (param.startsWith("--")) {
-        CONFIG_PSTORE.estilosCSS[param] = valor;
-      }
+      // Variables CSS (--color-algo, etc.)
+      if (param.startsWith("--")) CONFIG_PSTORE.estilosCSS[param] = valor;
 
-      // Parametros generales
+      // Parámetros generales
       if (param === "columnas_movil_defecto") CONFIG_PSTORE.columnasMovilDefecto = valor;
       if (param === "numero_whatsapp") CONFIG_PSTORE.numeroWhatsapp = valor;
       if (param === "nombre_tienda") CONFIG_PSTORE.nombreTienda = valor;
@@ -193,16 +198,14 @@ async function sincronizarConGoogleSheets() {
       if (param === "url_pdf_catalogo") CONFIG_PSTORE.urlPdfCatalogo = valor;
     });
 
-    const btnToggle = document.getElementById("btn-toggle-moneda");
-    if (btnToggle && tasaBcvActual) {
-      btnToggle.style.display = "inline-flex";
-      btnToggle.onclick = alternarMoneda;
-    }
-
     aplicarConfiguracion(CONFIG_PSTORE);
+    activarBotonMoneda();
+    // Si el usuario ya estaba viendo Bs., refrescar precios con la tasa nueva
+    if (mostrandoBolivares && listaProductosCompleta.length) aplicarFiltrosYPaginacion();
   } catch (error) {
     console.warn("Usando configuración local por defecto:", error);
     aplicarConfiguracion(CONFIG_PSTORE);
+    activarBotonMoneda();
   }
 }
 
@@ -212,8 +215,8 @@ async function sincronizarConGoogleSheets() {
 document.addEventListener("DOMContentLoaded", () => {
   if (typeof CONFIG_PSTORE !== "undefined") {
     aplicarConfiguracion(CONFIG_PSTORE);
+    cargarTasaDeRespaldo();
     sincronizarConGoogleSheets();
-    obtenerTasaBCV();
   }
   // --- RESTAURACIÓN: SELECTOR DE CUADRÍCULA / GRID ---
   const selectColumnas = document.getElementById("select-columnas");
@@ -243,9 +246,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const menuLateral = document.getElementById("menu-lateral");
   const menuOverlay = document.getElementById("menu-overlay");
 
+  // Oculto por defecto; solo se muestra cuando el navegador permite instalar la app
+  if (btnInstalarPWA) btnInstalarPWA.style.display = "none";
+
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
+    if (btnInstalarPWA) btnInstalarPWA.style.display = "";
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredPrompt = null;
     if (btnInstalarPWA) btnInstalarPWA.style.display = "none";
   });
 
@@ -310,6 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Guardamos el catálogo ordenado (4 nuevos al inicio + resto aleatorio)
     listaProductosCompleta = ordenarProductosParaCatalogo(productosBase);
+    sincronizarCarritoConCatalogo();
 
     // Si es la carga inicial en renderizado primario
     poblarCategorias(listaProductosCompleta);
@@ -475,37 +487,6 @@ function obtenerFiltrosSeleccionados() {
 
   return { filtros, textoBusqueda, precioMin, precioMax };
 }
-// --- NORMALIZADOR AVANZADO DE HOJA DE CÁLCULO ---
-function normalizarLlave(llave) {
-  return llave
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
-}
-
-function normalizarProductos(filas) {
-  return filas.map((f, idx) => {
-    if (!fila[0] || !fila[1]) return;
-    const objetoNormalizado = {};
-    Object.keys(f).forEach((llaveOriginal) => {
-      const limpia = normalizarLlave(llaveOriginal);
-      if (limpia.includes("id") || limpia.includes("codigo")) objetoNormalizado.id = f[llaveOriginal];
-      else if (limpia.includes("nombre") || limpia.includes("titulo") || limpia.includes("producto")) objetoNormalizado.nombre = f[llaveOriginal];
-      else if (limpia.includes("precio") || limpia.includes("costo")) objetoNormalizado.precio = f[llaveOriginal];
-      else if (limpia.includes("categoria") || limpia.includes("rubro")) objetoNormalizado.categoria = f[llaveOriginal];
-      else if (limpia.includes("descripcion") || limpia.includes("detalle")) objetoNormalizado.descripcion = f[llaveOriginal];
-      else if (limpia.includes("imagen") || limpia.includes("foto") || limpia.includes("url")) objetoNormalizado.imagen = f[llaveOriginal];
-      else if (limpia.includes("estado") || limpia.includes("badge") || limpia.includes("promo")) objetoNormalizado.estado = f[llaveOriginal];
-    });
-
-    if (!objetoNormalizado.id) objetoNormalizado.id = `prod-${idx + 1}`;
-    if (!objetoNormalizado.nombre) objetoNormalizado.nombre = "Producto sin nombre";
-    if (!objetoNormalizado.precio) objetoNormalizado.precio = "0.00";
-
-    return objetoNormalizado;
-  });
-}
 function filtrarProductos() {
   const { filtros, textoBusqueda, precioMin, precioMax } = obtenerFiltrosSeleccionados();
 
@@ -596,7 +577,7 @@ function renderizarTarjetas(productos) {
     tarjeta.className = clasesTarjeta;
 
     const precioNum = parseFloat(prod.precio);
-    const precioFormateado = isNaN(precioNum) ? prod.precio : precioNum.toFixed(2);
+    const precioFormateado = isNaN(precioNum) ? esc(prod.precio) : precioNum.toFixed(2);
     let htmlPrecio = `<span class="precio">$${precioFormateado}</span>`;
 
     if (mostrandoBolivares && tasaBcvActual) {
@@ -612,17 +593,22 @@ function renderizarTarjetas(productos) {
 
     tarjeta.innerHTML = `
       ${badgeHtml}
-      <button class="btn-fav ${esFav ? 'activo' : ''}" onclick="event.stopPropagation(); toggleFavorito('${prod.id}')">
+      <button class="btn-fav ${esFav ? 'activo' : ''}">
         ${esFav ? '❤️' : '🤍'}
       </button>
-      <img src="${srcImagen}" alt="${prod.nombre || ''}" ${loadingAttr}>
+      <img src="${esc(srcImagen)}" alt="${esc(prod.nombre)}" ${loadingAttr}>
       <div class="contenido">
-        <span class="categoria">${prod.categoria || ''}</span>
-        <h2 class="nombre">${prod.nombre || ''}</h2>
-        <p class="descripcion">${prod.descripcion || ''}</p>
+        <span class="categoria">${esc(prod.categoria)}</span>
+        <h2 class="nombre">${esc(prod.nombre)}</h2>
+        <p class="descripcion">${esc(prod.descripcion)}</p>
         <div class="precios">${htmlPrecio}</div>
       </div>
     `;
+
+    tarjeta.querySelector(".btn-fav").addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      toggleFavorito(prod.id);
+    });
 
     tarjeta.addEventListener("click", () => abrirModal(prod));
     contenedor.appendChild(tarjeta);
@@ -692,7 +678,7 @@ function abrirModal(producto) {
   const fotosRaw = producto.imagen ? producto.imagen.split(",") : [];
   const fotos = fotosRaw.map(url => obtenerUrlDirectaDrive(url.trim())).filter(Boolean);
 
-  const imagenPrincipal = fotos.length > 0 ? fotos[0] : 'https://ivanguillermo.github.io/pstore/assets/pstore.jpg';
+  const imagenPrincipal = fotos.length > 0 ? fotos[0] : 'assets/pstore.jpg';
   modalImg.src = imagenPrincipal;
   modalImg.alt = producto.nombre || "Producto";
 
@@ -750,8 +736,8 @@ function cerrarModal() {
     document.title = "Pstore | Catálogo Online — Envíos a Barquisimeto, Cabudare, Acarigua y Yaracuy";
     actualizarMetaTag("property", "og:title", "Pstore | Tu Tienda Online");
     actualizarMetaTag("property", "og:description", "Explora nuestro catálogo exclusivo, ofertas y novedades con entregas rápidas.");
-    actualizarMetaTag("property", "og:image", "https://ivanguillermo.github.io/pstore/assets/pstore.jpg");
-    actualizarMetaTag("property", "og:url", "https://ivanguillermo.github.io/pstore/");
+    actualizarMetaTag("property", "og:image", "https://pstore.com.ve/assets/pstore.jpg");
+    actualizarMetaTag("property", "og:url", "https://pstore.com.ve/");
   }
 }
 
@@ -770,7 +756,7 @@ function configurarEventosModal() {
 
   document.getElementById("btn-consultar-whatsapp")?.addEventListener("click", () => {
     if (!productoActualModal) return;
-    const telefono = CONFIG_PSTORE.numeroWhatsapp || "584125043754";
+    const telefono = CONFIG_PSTORE.numeroWhatsapp || "584126216661";
     const urlProducto = `${window.location.origin}${window.location.pathname}#${productoActualModal.id}`;
     let mensaje = `👋 ¡Hola Pstore! Quisiera consultar sobre este producto:\n\n📌 *${productoActualModal.nombre}*\n💰 *Precio:* $${parseFloat(productoActualModal.precio).toFixed(2)}\n🔗 *Link:* ${urlProducto}`;
     window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank");
@@ -803,23 +789,44 @@ function actualizarEnlacesCompartir(producto) {
 // CARRITO Y WISHLIST
 // ==========================================
 
+function claveCarrito(p) {
+  return String(p.id || p.nombre);
+}
+
 function agregarAlCarrito(prod) {
-  const existe = carrito.find((p) => p.nombre === prod.nombre);
+  const clave = String(prod.id || prod.nombre);
+  const existe = carrito.find((p) => claveCarrito(p) === clave);
   if (existe) {
     existe.cantidad++;
   } else {
-    carrito.push({ nombre: prod.nombre, precio: parseFloat(prod.precio) || 0, cantidad: 1 });
+    carrito.push({ id: prod.id || "", nombre: prod.nombre, precio: parseFloat(prod.precio) || 0, cantidad: 1 });
   }
   guardarYActualizarCarrito();
 }
 
-function modificarCantidad(nombre, cambio) {
-  const prod = carrito.find((p) => p.nombre === nombre);
+function modificarCantidad(clave, cambio) {
+  const prod = carrito.find((p) => claveCarrito(p) === String(clave));
   if (prod) {
     prod.cantidad += cambio;
-    if (prod.cantidad <= 0) carrito = carrito.filter((p) => p.nombre !== nombre);
+    if (prod.cantidad <= 0) carrito = carrito.filter((p) => claveCarrito(p) !== String(clave));
   }
   guardarYActualizarCarrito();
+}
+
+// Al cargar el catálogo: rellena el id de ítems viejos y actualiza precios guardados
+function sincronizarCarritoConCatalogo() {
+  if (!carrito.length || !listaProductosCompleta.length) return;
+  carrito.forEach(item => {
+    const p = listaProductosCompleta.find(x => (item.id && x.id === item.id) || (!item.id && x.nombre === item.nombre));
+    if (p) {
+      item.id = p.id;
+      const precioActual = parseFloat(p.precio);
+      if (!isNaN(precioActual)) item.precio = precioActual;
+    }
+  });
+  localStorage.setItem("pstore_carrito", JSON.stringify(carrito));
+  actualizarContadorCarrito();
+  renderizarCarrito();
 }
 
 function guardarYActualizarCarrito() {
@@ -853,15 +860,17 @@ function renderizarCarrito() {
     item.className = "item-carrito";
     item.innerHTML = `
       <div class="info-item-carrito">
-        <strong>${prod.nombre}</strong>
+        <strong>${esc(prod.nombre)}</strong>
         <span>$${prod.precio.toFixed(2)} c/u</span>
       </div>
       <div class="controles-item-carrito">
-        <button class="btn-cant" onclick="modificarCantidad('${prod.nombre}', -1)">-</button>
+        <button class="btn-cant menos">-</button>
         <span>${prod.cantidad}</span>
-        <button class="btn-cant" onclick="modificarCantidad('${prod.nombre}', 1)">+</button>
+        <button class="btn-cant mas">+</button>
       </div>
     `;
+    item.querySelector(".menos").addEventListener("click", () => modificarCantidad(claveCarrito(prod), -1));
+    item.querySelector(".mas").addEventListener("click", () => modificarCantidad(claveCarrito(prod), 1));
     listaCarrito.appendChild(item);
   });
 
@@ -901,13 +910,16 @@ function enviarPedidoWhatsApp() {
   // 1. Cálculos de subtotales y formato estricto de productos: ID,cantidad,ID,cantidad
   let subtotal = 0;
   let productosArray = [];
+  let lineasWp = [];
 
   carrito.forEach((prod) => {
     const itemSubtotal = prod.precio * prod.cantidad;
     subtotal += itemSubtotal;
-    // Asegurar el formato: ID,cantidad
-    const idProd = prod.id || prod.nombre; // Usa el ID del producto
+    // Formato para el Sheet: ID,cantidad (sin comas dentro del ID/nombre)
+    const idProd = String(prod.id || prod.nombre).replace(/,/g, " ").trim();
     productosArray.push(`${idProd},${prod.cantidad}`);
+    // Para el mensaje de WhatsApp: legible para ti y para el cliente
+    lineasWp.push(`• ${prod.cantidad} x ${prod.nombre}${prod.id ? " (" + prod.id + ")" : ""}`);
   });
 
   let totalUSD = subtotal;
@@ -943,18 +955,7 @@ function enviarPedidoWhatsApp() {
   };
 
   // 4. Enviar los datos a Google Apps Script
-  const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzEgXQxewVbQSo_7CfL-G0mZCBiuMqM-XLaUGVYgpy-lAslFF5wHKuq1WNB1-6FugvXzA/exec";
-  
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(URL_APPS_SCRIPT, JSON.stringify(payloadPreorden));
-  } else {
-    fetch(URL_APPS_SCRIPT, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payloadPreorden)
-    }).catch(err => console.error("Error al registrar preorden:", err));
-  }
+  enviarAlScript(payloadPreorden);
 
   const totalUnidades = carrito.reduce((acc, p) => acc + p.cantidad, 0);
   registrarEvento("pedido_whatsapp", "carrito_checkout", `${totalUnidades} prod | ID: ${idPedido} | Total: $${totalUSD.toFixed(2)}`);
@@ -964,7 +965,7 @@ function enviarPedidoWhatsApp() {
                   `🆔 *ID:* ${idPedido}\n` +
                   `👤 *Cliente:* ${nombre} ${clienteActual ? '⭐ [VIP]' : ''}\n` +
                   `📞 *TLF:* ${telefonoCliente}\n\n` +
-                  `📦 *Productos:* ${productosFormateados}\n\n` +
+                  `📦 *Productos:*\n${lineasWp.join("\n")}\n\n` +
                   `💰 *Total USD:* $${totalUSD.toFixed(2)}\n`;
   if (tasaBcvActual) {
     mensajeWp += `🇻🇪 *Total Bs:* Bs. ${totalBolivares.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
@@ -973,7 +974,7 @@ function enviarPedidoWhatsApp() {
                `💳 *Método de Pago:* ${metodoPago}\n` +
                `📍 *Tipo / Dirección:* ${tipoPedido} - ${direccionCliente}`;
 
-  const telefonoTienda = CONFIG_PSTORE.numeroWhatsapp || "584125043754";
+  const telefonoTienda = CONFIG_PSTORE.numeroWhatsapp || "584126216661";
   window.open(`https://wa.me/${telefonoTienda}?text=${encodeURIComponent(mensajeWp)}`, "_blank");
 }
 // ==========================================
