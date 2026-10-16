@@ -361,7 +361,7 @@
 
   <script>
     const ADMIN_EMAILS = ["ivanglopezp@gmail.com","equ1strec3@gmail.com","paulaherro.05@gmail.com","latiendadepaula@gmail.com"];
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsbcjuORYFllO7KZ2yYF5BkGkdYi8PPp9TKE8VGyYXUOkl8227QwrBV3m5DlgMGAIS3A/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPCgvhnQ97X0X16CzwKau5XxeOy8tiFAjdsrtcmpuMmi4zaAaeNjN-m4Zs2rYQXkzs0w/exec";
 
     let cacheGlobalData = null; // Para guardar productos y stock en memoria para el modal
     
@@ -791,6 +791,20 @@ function mostrarPreviewLocal(input) {
     reader.readAsDataURL(file);
 }
 
+// Pone un valor en un <select>; si la opción no existe todavía, la agrega
+function setSelectValue(id, valor) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const v = String(valor || "").trim();
+    if (!v) { el.value = ""; return; }
+    const existente = Array.from(el.options).find(o => o.value.trim().toLowerCase() === v.toLowerCase());
+    if (existente) { el.value = existente.value; return; }
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    el.appendChild(opt);
+    el.value = v;
+}
+
 // Paso 1: Sube la imagen a Drive de forma independiente
 async function enviarImagenADrive() {
     if (!base64ImagenGlobal) {
@@ -821,12 +835,21 @@ async function enviarImagenADrive() {
             document.getElementById('prodImagenDriveUrl').value = result.imagen_drive;
 
             // 2. Precargar campos devueltos por la IA (¡Totalmente editables por ti!)
-            if (result.sugerencia) {
-                document.getElementById('prodNombre').value = result.sugerencia.nombre || "";
-                document.getElementById('prodCategoria').value = result.sugerencia.categoria || "";
-                document.getElementById('prodSubcategoria').value = result.sugerencia.categoria_secundaria || "";
-                document.getElementById('prodColeccion').value = result.sugerencia.coleccion || "";
-                document.getElementById('prodDescripcion').value = result.sugerencia.descripcion || "";
+            const sug = result.sugerencia || {};
+            const hayIA = Object.keys(sug).length > 0;
+            if (hayIA) {
+                document.getElementById('prodNombre').value = sug.nombre || "";
+                setSelectValue('prodCategoria', sug.categoria);
+                setSelectValue('prodSubcategoria', sug.categoria_secundaria);
+                setSelectValue('prodColeccion', sug.coleccion);
+                document.getElementById('prodDescripcion').value = sug.descripcion || "";
+            }
+
+            if (!hayIA) {
+                document.getElementById('textoEstadoImagen').innerText = "✓ Imagen subida a Drive, pero la IA no respondió.";
+                document.getElementById('textoEstadoImagen').style.color = "#f59e0b";
+                alert("⚠️ La imagen se subió a Drive, pero la IA falló:\n\n" + (result.ia_error || "Sin detalle") + "\n\nPuedes llenar el formulario a mano.");
+                return;
             }
 
             document.getElementById('textoEstadoImagen').innerText = "✓ ¡Imagen subida y analizada por la IA!";
