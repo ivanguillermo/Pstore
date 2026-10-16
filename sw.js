@@ -15,23 +15,26 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Los envíos de tu Apps Script son "data-only": el título y el texto vienen en payload.data.
+// Si llegara un mensaje con bloque "notification" (p. ej. desde la consola de Firebase),
+// el navegador ya lo muestra solo; por eso aquí no se duplica.
 messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification?.title || "Pstore";
-  const notificationOptions = {
-    body: payload.notification?.body || "",
-    icon: payload.notification?.icon || '/assets/pstore.jpg',
+  if (payload.notification) return;
+  const d = payload.data || {};
+  self.registration.showNotification(d.title || "Pstore", {
+    body: d.body || "",
+    icon: d.icon || '/assets/pstore.jpg',
     badge: '/assets/pstore.jpg',
-    data: { url: payload.data?.url || '/' }
-  };
-  self.registration.showNotification(notificationTitle, notificationOptions);
+    data: { url: d.url || '/' }
+  });
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const urlToOpen = event.notification.data?.url || '/';
+  const urlToOpen = new URL(event.notification.data?.url || '/', self.location.origin).href;
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (let client of windowClients) {
+      for (const client of windowClients) {
         if (client.url === urlToOpen && 'focus' in client) return client.focus();
       }
       if (clients.openWindow) return clients.openWindow(urlToOpen);
@@ -42,7 +45,7 @@ self.addEventListener('notificationclick', (event) => {
 // ==========================================
 // 2. CACHÉ OFFLINE
 // ==========================================
-const CACHE_NAME = 'pstore-v1';
+const CACHE_NAME = 'pstore-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -56,16 +59,25 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
+  // Un archivo que falte ya NO rompe la instalación del service worker
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(ASSETS_TO_CACHE.map((url) => cache.add(url).catch(() => console.warn('No se cacheó:', url))))
+    ).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((key) => key !== CACHE_NAME ? caches.delete(key) : null)))
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => key !== CACHE_NAME ? caches.delete(key) : null)))
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (e) => {
-  if (e.request.url.includes('firestore') || e.request.url.includes('googleapis')) return;
+  if (e.request.method !== 'GET') return;
+  const url = e.request.url;
+  if (url.includes('firestore') || url.includes('googleapis') || url.includes('script.google.com') || url.includes('docs.google.com')) return;
   e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
